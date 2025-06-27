@@ -25,4 +25,9 @@ public class AuthController {
         AuthResponse response = userService.authenticateUser(request);
         return ResponseEntity.ok(response);
     }
-} 
+
+    @GetMapping("/test")
+    public ResponseEntity<String> testAuth() {
+        return ResponseEntity.ok("Authentication successful");
+    }
+}

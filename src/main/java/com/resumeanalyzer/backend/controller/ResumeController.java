@@ -28,11 +28,12 @@ public class ResumeController {
     @GetMapping("/versions")
     public List<ResumeVersionDTO> getResumeVersions(@AuthenticationPrincipal User user) {
         return resumeService.getResumeVersions(user).stream().map(resume ->
-            ResumeVersionDTO.builder()
-                .id(resume.getId())
-                .fileName(resume.getFileName())
-                .uploadDate(resume.getUploadDate())
-                .build()
+                new ResumeVersionDTO(resume.getId(), resume.getFileName(), resume.getUploadDate())
         ).collect(Collectors.toList());
     }
-} 
+
+    @GetMapping("/test")
+    public ResponseEntity<String> testAuth(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok("Authentication successful for user: " + user.getEmail());
+    }
+}

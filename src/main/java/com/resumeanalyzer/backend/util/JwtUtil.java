@@ -26,9 +26,12 @@ public class JwtUtil {
 
     public boolean validateToken(String token) {
         try {
+            System.out.println("Validating token: " + token.substring(0, Math.min(20, token.length())) + "...");
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            System.out.println("Token validation successful");
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            System.out.println("Token validation failed: " + e.getMessage());
             return false;
         }
     }

@@ -63,7 +63,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -87,18 +87,33 @@ public class SecurityConfig {
             String authHeader = request.getHeader("Authorization");
             String token = null;
             String username = null;
+            
+            System.out.println("Processing request: " + request.getMethod() + " " + request.getRequestURI());
+            System.out.println("Authorization header: " + authHeader);
+            
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7);
+                System.out.println("Extracted token: " + token.substring(0, Math.min(20, token.length())) + "...");
+                
                 if (jwtUtil.validateToken(token)) {
                     username = jwtUtil.extractUsername(token);
+                    System.out.println("Token is valid, username: " + username);
+                } else {
+                    System.out.println("Token is invalid");
                 }
+            } else {
+                System.out.println("No Bearer token found");
             }
+            
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 com.resumeanalyzer.backend.entity.User user = userRepository.findByEmail(username).orElse(null);
                 if (user != null) {
+                    System.out.println("User found: " + user.getEmail() + ", role: " + user.getRole());
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             user, null, java.util.List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    System.out.println("User not found for username: " + username);
                 }
             }
             filterChain.doFilter(request, response);
