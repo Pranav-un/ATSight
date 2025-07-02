@@ -1,0 +1,776 @@
+{
+	"info": {
+		"_postman_id": "72243671-fa7b-4eb0-aeee-17bb1f72b6ca",
+		"name": "Resume ATS Copy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43151349"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"test1user@example.com\",\r\n  \"password\": \"yourpassword\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/register?role=RECRUITER",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"auth",
+								"register"
+							],
+							"query": [
+								{
+									"key": "role",
+									"value": "RECRUITER"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"test1user@example.com\",\r\n  \"password\": \"yourpassword\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "JobSeeker",
+			"item": [
+				{
+					"name": "Upload Resume",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlckBleGFtcGxlLmNvbSIsInJvbGUiOiJKT0JTRUVLRVIiLCJpYXQiOjE3NTA1NjE2NDEsImV4cCI6MTc1MDY0ODA0MX0.EI2vAiSbru-8cIiNwUqKNQupgMnQ5Igouhq_tuCU5oA",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/C:/Users/prana/Downloads/resume.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/resume/upload",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"resume",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "JD Upload",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlckBleGFtcGxlLmNvbSIsInJvbGUiOiJKT0JTRUVLRVIiLCJpYXQiOjE3NTA1MTkyNzYsImV4cCI6MTc1MDYwNTY3Nn0.x0FhPSK0BxrZ6N2a3Jv7GySK2YL3Y1WC5BK0-EdSSAM",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "  { \"text\": \"Your job description here...\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/jd/upload-text",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"jd",
+								"upload-text"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Analisis",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlckBleGFtcGxlLmNvbSIsInJvbGUiOiJKT0JTRUVLRVIiLCJpYXQiOjE3NTA1MjM1OTIsImV4cCI6MTc1MDYwOTk5Mn0.Vx7IVxU6gthUFFOJZplXh3pCnI6RfWvpqKWhtXyyc3o",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"resumeId\": 1,\r\n  \"jdId\": 3\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/analysis/analyze",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"analysis",
+								"analyze"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Enhanced",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlckBleGFtcGxlLmNvbSIsInJvbGUiOiJKT0JTRUVLRVIiLCJpYXQiOjE3NTA1MTkyNzYsImV4cCI6MTc1MDYwNTY3Nn0.x0FhPSK0BxrZ6N2a3Jv7GySK2YL3Y1WC5BK0-EdSSAM",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"resumeId\": 1,\r\n  \"jdId\": 2\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/analysis/analyze-enhanced",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"analysis",
+								"analyze-enhanced"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Analyze Resume",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huQGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ5OTE2NDgwLCJleHAiOjE3NTAwMDI4ODB9.Jk2usfhXKGeT-9oqd5AUKG_jI3A1ltfyEmk0sbMpMnw",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumeText",
+									"value": "\\nPranav Unnikrishnan\\nIdukki, Kerala | pranavunnikrishnan@hotmail.com | +91 9562 078 409 | LinkedIn | GitHub | Portfolio\\n\\nSummary\\n\\nFull stack software engineer skilled in Java, Spring Boot, React, and Python. Strong problem-solver with hands-on\\nexperience in building full stack web applications. MCA student with working knowledge of industry tech stack\\nand strong CS fundamentals.\\n\\nEducation\\n\\nMaster of Computer Applications (MCA), Marian College, Kuttikanam\\n(Autonomous)\\n\\n2024 – 2026 (Expected)\\n\\nBachelor of Computer Applications (BCA), Christ College, Puliyannal 2021 – 2024\\n\\nTechnical Skills\\n\\nLanguages: Java, Python, JavaScript, TypeScript, SQL\\n\\nFrameworks & Libraries: Spring Boot, Django, React, Node.js, Express.js\\n\\nDatabases & Cloud: MySQL, MongoDB, PostgreSQL, AWS, Docker, Kubernetes\\n\\nTools & Technologies: Git, Swagger, WebSocket, Socket.IO, Power BI, JIRA, Render, Vercel\\n\\nProjects\\n\\nStock Broker Paper Trading Platform (Ongoing) GitHub | Live\\n\\n• Built educational trading dashboard with real-time WebSocket updates and trade analytics\\n• Implemented emotion tracking algorithm and news-based trading suggestions using News API\\n• Documented REST APIs with Swagger; integrated PostgreSQL for performance tracking\\n• Tech Stack: React, Spring Boot, PostgreSQL, WebSocket, News API\\n\\nCollaborative Code Editor (Ongoing) GitHub | Live\\n\\n• Developed real-time collaborative editor with Socket.IO for live sync and integrated chat\\n• Supports multiple concurrent users with conflict resolution and CodeMirror integration\\n• Tech Stack: React, Node.js, Express.js, Socket.IO, CodeMirror\\n\\nAgricultural Marketplace & Advisory Platform (Ongoing) GitHub | Live\\n\\n• Developed full-stack marketplace connecting farmers with buyers using Django MVT architecture\\n• Integrated payment gateway and built admin dashboard for platform monitoring\\n• Implemented user authentication, product listings, and responsive UI design\\n• Tech Stack: Django, Python, SQLite, HTML/CSS, JavaScript, Bootstrap\\n\\nCertifications\\n\\nMachine Learning with Python – Level 1, IBM Apr 2025\\n\\nVerify Credential\\n\\nData Science Methodologies, IBM Oct 2024\\nVerify Credential\\n\\nData Science Tools, IBM Oct 2024\\nVerify Credential\\n\\nmailto:pranavunnikrishnan@hotmail.com\\ntel:+91-9562078409\\nhttps://www.linkedin.com/in/pranav-un/\\nhttps://github.com/Pranav-un\\nhttps://pra-poio.vercel.app/\\nhttps://github.com/Pranav-un/stock-trading-platform\\nhttps://stock-trading-demo.vercel.app/\\nhttps://github.com/Pranav-un/collaborative-code-editor\\nhttps://code-editor-collab.herokuapp.com/\\nhttps://github.com/Pranav-un/agricultural-marketplace\\nhttps://agri-marketplace.herokuapp.com/\\nhttps://www.credly.com/badges/ml-python-level1\\nhttps://www.credly.com/badges/0d91c023-9cbb-4461-97d7-9f4bc5d3d7ed\\nhttps://www.credly.com/badges/f61da9a8-40fa-48f4-b989-e4907f534c62\\n\\n\\tSummary\\n\\tEducation\\n\\tTechnical Skills\\n\\tProjects\\n\\tCertifications\\n\\n\"\n}",
+									"type": "text"
+								},
+								{
+									"key": "jobDescription",
+									"value": "Looking for a Java developer with Spring Boot experience",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/resume/analyze-text",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"resume",
+								"analyze-text"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "History",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlckBleGFtcGxlLmNvbSIsInJvbGUiOiJKT0JTRUVLRVIiLCJpYXQiOjE3NTA1ODMzNjEsImV4cCI6MTc1MDY2OTc2MX0.jVIuxaP45WCGdwJq2bWvj3r_HgmgTQvg2EoLO9iYQVw",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumeText",
+									"value": "\\nPranav Unnikrishnan\\nIdukki, Kerala | pranavunnikrishnan@hotmail.com | +91 9562 078 409 | LinkedIn | GitHub | Portfolio\\n\\nSummary\\n\\nFull stack software engineer skilled in Java, Spring Boot, React, and Python. Strong problem-solver with hands-on\\nexperience in building full stack web applications. MCA student with working knowledge of industry tech stack\\nand strong CS fundamentals.\\n\\nEducation\\n\\nMaster of Computer Applications (MCA), Marian College, Kuttikanam\\n(Autonomous)\\n\\n2024 – 2026 (Expected)\\n\\nBachelor of Computer Applications (BCA), Christ College, Puliyannal 2021 – 2024\\n\\nTechnical Skills\\n\\nLanguages: Java, Python, JavaScript, TypeScript, SQL\\n\\nFrameworks & Libraries: Spring Boot, Django, React, Node.js, Express.js\\n\\nDatabases & Cloud: MySQL, MongoDB, PostgreSQL, AWS, Docker, Kubernetes\\n\\nTools & Technologies: Git, Swagger, WebSocket, Socket.IO, Power BI, JIRA, Render, Vercel\\n\\nProjects\\n\\nStock Broker Paper Trading Platform (Ongoing) GitHub | Live\\n\\n• Built educational trading dashboard with real-time WebSocket updates and trade analytics\\n• Implemented emotion tracking algorithm and news-based trading suggestions using News API\\n• Documented REST APIs with Swagger; integrated PostgreSQL for performance tracking\\n• Tech Stack: React, Spring Boot, PostgreSQL, WebSocket, News API\\n\\nCollaborative Code Editor (Ongoing) GitHub | Live\\n\\n• Developed real-time collaborative editor with Socket.IO for live sync and integrated chat\\n• Supports multiple concurrent users with conflict resolution and CodeMirror integration\\n• Tech Stack: React, Node.js, Express.js, Socket.IO, CodeMirror\\n\\nAgricultural Marketplace & Advisory Platform (Ongoing) GitHub | Live\\n\\n• Developed full-stack marketplace connecting farmers with buyers using Django MVT architecture\\n• Integrated payment gateway and built admin dashboard for platform monitoring\\n• Implemented user authentication, product listings, and responsive UI design\\n• Tech Stack: Django, Python, SQLite, HTML/CSS, JavaScript, Bootstrap\\n\\nCertifications\\n\\nMachine Learning with Python – Level 1, IBM Apr 2025\\n\\nVerify Credential\\n\\nData Science Methodologies, IBM Oct 2024\\nVerify Credential\\n\\nData Science Tools, IBM Oct 2024\\nVerify Credential\\n\\nmailto:pranavunnikrishnan@hotmail.com\\ntel:+91-9562078409\\nhttps://www.linkedin.com/in/pranav-un/\\nhttps://github.com/Pranav-un\\nhttps://pra-poio.vercel.app/\\nhttps://github.com/Pranav-un/stock-trading-platform\\nhttps://stock-trading-demo.vercel.app/\\nhttps://github.com/Pranav-un/collaborative-code-editor\\nhttps://code-editor-collab.herokuapp.com/\\nhttps://github.com/Pranav-un/agricultural-marketplace\\nhttps://agri-marketplace.herokuapp.com/\\nhttps://www.credly.com/badges/ml-python-level1\\nhttps://www.credly.com/badges/0d91c023-9cbb-4461-97d7-9f4bc5d3d7ed\\nhttps://www.credly.com/badges/f61da9a8-40fa-48f4-b989-e4907f534c62\\n\\n\\tSummary\\n\\tEducation\\n\\tTechnical Skills\\n\\tProjects\\n\\tCertifications\\n\\n\"\n}",
+									"type": "text"
+								},
+								{
+									"key": "jobDescription",
+									"value": "Looking for a Java developer with Spring Boot experience",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/analysis/history",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"analysis",
+								"history"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Trends",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huQGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ5OTE2NDgwLCJleHAiOjE3NTAwMDI4ODB9.Jk2usfhXKGeT-9oqd5AUKG_jI3A1ltfyEmk0sbMpMnw",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumeText",
+									"value": "\\nPranav Unnikrishnan\\nIdukki, Kerala | pranavunnikrishnan@hotmail.com | +91 9562 078 409 | LinkedIn | GitHub | Portfolio\\n\\nSummary\\n\\nFull stack software engineer skilled in Java, Spring Boot, React, and Python. Strong problem-solver with hands-on\\nexperience in building full stack web applications. MCA student with working knowledge of industry tech stack\\nand strong CS fundamentals.\\n\\nEducation\\n\\nMaster of Computer Applications (MCA), Marian College, Kuttikanam\\n(Autonomous)\\n\\n2024 – 2026 (Expected)\\n\\nBachelor of Computer Applications (BCA), Christ College, Puliyannal 2021 – 2024\\n\\nTechnical Skills\\n\\nLanguages: Java, Python, JavaScript, TypeScript, SQL\\n\\nFrameworks & Libraries: Spring Boot, Django, React, Node.js, Express.js\\n\\nDatabases & Cloud: MySQL, MongoDB, PostgreSQL, AWS, Docker, Kubernetes\\n\\nTools & Technologies: Git, Swagger, WebSocket, Socket.IO, Power BI, JIRA, Render, Vercel\\n\\nProjects\\n\\nStock Broker Paper Trading Platform (Ongoing) GitHub | Live\\n\\n• Built educational trading dashboard with real-time WebSocket updates and trade analytics\\n• Implemented emotion tracking algorithm and news-based trading suggestions using News API\\n• Documented REST APIs with Swagger; integrated PostgreSQL for performance tracking\\n• Tech Stack: React, Spring Boot, PostgreSQL, WebSocket, News API\\n\\nCollaborative Code Editor (Ongoing) GitHub | Live\\n\\n• Developed real-time collaborative editor with Socket.IO for live sync and integrated chat\\n• Supports multiple concurrent users with conflict resolution and CodeMirror integration\\n• Tech Stack: React, Node.js, Express.js, Socket.IO, CodeMirror\\n\\nAgricultural Marketplace & Advisory Platform (Ongoing) GitHub | Live\\n\\n• Developed full-stack marketplace connecting farmers with buyers using Django MVT architecture\\n• Integrated payment gateway and built admin dashboard for platform monitoring\\n• Implemented user authentication, product listings, and responsive UI design\\n• Tech Stack: Django, Python, SQLite, HTML/CSS, JavaScript, Bootstrap\\n\\nCertifications\\n\\nMachine Learning with Python – Level 1, IBM Apr 2025\\n\\nVerify Credential\\n\\nData Science Methodologies, IBM Oct 2024\\nVerify Credential\\n\\nData Science Tools, IBM Oct 2024\\nVerify Credential\\n\\nmailto:pranavunnikrishnan@hotmail.com\\ntel:+91-9562078409\\nhttps://www.linkedin.com/in/pranav-un/\\nhttps://github.com/Pranav-un\\nhttps://pra-poio.vercel.app/\\nhttps://github.com/Pranav-un/stock-trading-platform\\nhttps://stock-trading-demo.vercel.app/\\nhttps://github.com/Pranav-un/collaborative-code-editor\\nhttps://code-editor-collab.herokuapp.com/\\nhttps://github.com/Pranav-un/agricultural-marketplace\\nhttps://agri-marketplace.herokuapp.com/\\nhttps://www.credly.com/badges/ml-python-level1\\nhttps://www.credly.com/badges/0d91c023-9cbb-4461-97d7-9f4bc5d3d7ed\\nhttps://www.credly.com/badges/f61da9a8-40fa-48f4-b989-e4907f534c62\\n\\n\\tSummary\\n\\tEducation\\n\\tTechnical Skills\\n\\tProjects\\n\\tCertifications\\n\\n\"\n}",
+									"type": "text"
+								},
+								{
+									"key": "jobDescription",
+									"value": "Looking for a Java developer with Spring Boot experience",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/resume/report-pdf",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"resume",
+								"report-pdf"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resume Versions",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlckBleGFtcGxlLmNvbSIsInJvbGUiOiJKT0JTRUVLRVIiLCJpYXQiOjE3NTA1ODMzNjEsImV4cCI6MTc1MDY2OTc2MX0.jVIuxaP45WCGdwJq2bWvj3r_HgmgTQvg2EoLO9iYQVw",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumeFile",
+									"type": "file",
+									"src": "/C:/Users/prana/Downloads/resume.pdf"
+								},
+								{
+									"key": "jdFile",
+									"type": "file",
+									"src": "/C:/Users/prana/Downloads/resume.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/resume/versions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"resume",
+								"versions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Recruiter",
+			"item": [
+				{
+					"name": "Bulk upload",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0MXVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoiUkVDUlVJVEVSIiwiaWF0IjoxNzUwNTg1Mjk3LCJleHAiOjE3NTA2NzE2OTd9.ceodT-2m7Shyosymsfx_t7uUP1aHmAclI9Zi-jU_-N8",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumes",
+									"type": "file",
+									"src": "/C:/Users/prana/Downloads/blue professional modern CV resume (4) (1).pdf"
+								},
+								{
+									"key": "resumes",
+									"type": "file",
+									"src": "/C:/Users/prana/Downloads/resume.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/recruiter/bulk-upload",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"recruiter",
+								"bulk-upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Leaderboard",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0MXVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoiUkVDUlVJVEVSIiwiaWF0IjoxNzUwNTg1Mjk3LCJleHAiOjE3NTA2NzE2OTd9.ceodT-2m7Shyosymsfx_t7uUP1aHmAclI9Zi-jU_-N8",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumeText",
+									"value": "\\nPranav Unnikrishnan\\nIdukki, Kerala | pranavunnikrishnan@hotmail.com | +91 9562 078 409 | LinkedIn | GitHub | Portfolio\\n\\nSummary\\n\\nFull stack software engineer skilled in Java, Spring Boot, React, and Python. Strong problem-solver with hands-on\\nexperience in building full stack web applications. MCA student with working knowledge of industry tech stack\\nand strong CS fundamentals.\\n\\nEducation\\n\\nMaster of Computer Applications (MCA), Marian College, Kuttikanam\\n(Autonomous)\\n\\n2024 – 2026 (Expected)\\n\\nBachelor of Computer Applications (BCA), Christ College, Puliyannal 2021 – 2024\\n\\nTechnical Skills\\n\\nLanguages: Java, Python, JavaScript, TypeScript, SQL\\n\\nFrameworks & Libraries: Spring Boot, Django, React, Node.js, Express.js\\n\\nDatabases & Cloud: MySQL, MongoDB, PostgreSQL, AWS, Docker, Kubernetes\\n\\nTools & Technologies: Git, Swagger, WebSocket, Socket.IO, Power BI, JIRA, Render, Vercel\\n\\nProjects\\n\\nStock Broker Paper Trading Platform (Ongoing) GitHub | Live\\n\\n• Built educational trading dashboard with real-time WebSocket updates and trade analytics\\n• Implemented emotion tracking algorithm and news-based trading suggestions using News API\\n• Documented REST APIs with Swagger; integrated PostgreSQL for performance tracking\\n• Tech Stack: React, Spring Boot, PostgreSQL, WebSocket, News API\\n\\nCollaborative Code Editor (Ongoing) GitHub | Live\\n\\n• Developed real-time collaborative editor with Socket.IO for live sync and integrated chat\\n• Supports multiple concurrent users with conflict resolution and CodeMirror integration\\n• Tech Stack: React, Node.js, Express.js, Socket.IO, CodeMirror\\n\\nAgricultural Marketplace & Advisory Platform (Ongoing) GitHub | Live\\n\\n• Developed full-stack marketplace connecting farmers with buyers using Django MVT architecture\\n• Integrated payment gateway and built admin dashboard for platform monitoring\\n• Implemented user authentication, product listings, and responsive UI design\\n• Tech Stack: Django, Python, SQLite, HTML/CSS, JavaScript, Bootstrap\\n\\nCertifications\\n\\nMachine Learning with Python – Level 1, IBM Apr 2025\\n\\nVerify Credential\\n\\nData Science Methodologies, IBM Oct 2024\\nVerify Credential\\n\\nData Science Tools, IBM Oct 2024\\nVerify Credential\\n\\nmailto:pranavunnikrishnan@hotmail.com\\ntel:+91-9562078409\\nhttps://www.linkedin.com/in/pranav-un/\\nhttps://github.com/Pranav-un\\nhttps://pra-poio.vercel.app/\\nhttps://github.com/Pranav-un/stock-trading-platform\\nhttps://stock-trading-demo.vercel.app/\\nhttps://github.com/Pranav-un/collaborative-code-editor\\nhttps://code-editor-collab.herokuapp.com/\\nhttps://github.com/Pranav-un/agricultural-marketplace\\nhttps://agri-marketplace.herokuapp.com/\\nhttps://www.credly.com/badges/ml-python-level1\\nhttps://www.credly.com/badges/0d91c023-9cbb-4461-97d7-9f4bc5d3d7ed\\nhttps://www.credly.com/badges/f61da9a8-40fa-48f4-b989-e4907f534c62\\n\\n\\tSummary\\n\\tEducation\\n\\tTechnical Skills\\n\\tProjects\\n\\tCertifications\\n\\n\"\n}",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "jobDescription",
+									"value": "Looking for a Java developer with Spring Boot experience",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/recruiter/leaderboard/3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"recruiter",
+								"leaderboard",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Individual",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0MXVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoiUkVDUlVJVEVSIiwiaWF0IjoxNzUwNTg3MDQ3LCJleHAiOjE3NTA2NzM0NDd9.ewbFdJgL_EKSA4GlOKE-6n9khdibL81qtl7DJaLrcW0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumeText",
+									"value": "\\nPranav Unnikrishnan\\nIdukki, Kerala | pranavunnikrishnan@hotmail.com | +91 9562 078 409 | LinkedIn | GitHub | Portfolio\\n\\nSummary\\n\\nFull stack software engineer skilled in Java, Spring Boot, React, and Python. Strong problem-solver with hands-on\\nexperience in building full stack web applications. MCA student with working knowledge of industry tech stack\\nand strong CS fundamentals.\\n\\nEducation\\n\\nMaster of Computer Applications (MCA), Marian College, Kuttikanam\\n(Autonomous)\\n\\n2024 – 2026 (Expected)\\n\\nBachelor of Computer Applications (BCA), Christ College, Puliyannal 2021 – 2024\\n\\nTechnical Skills\\n\\nLanguages: Java, Python, JavaScript, TypeScript, SQL\\n\\nFrameworks & Libraries: Spring Boot, Django, React, Node.js, Express.js\\n\\nDatabases & Cloud: MySQL, MongoDB, PostgreSQL, AWS, Docker, Kubernetes\\n\\nTools & Technologies: Git, Swagger, WebSocket, Socket.IO, Power BI, JIRA, Render, Vercel\\n\\nProjects\\n\\nStock Broker Paper Trading Platform (Ongoing) GitHub | Live\\n\\n• Built educational trading dashboard with real-time WebSocket updates and trade analytics\\n• Implemented emotion tracking algorithm and news-based trading suggestions using News API\\n• Documented REST APIs with Swagger; integrated PostgreSQL for performance tracking\\n• Tech Stack: React, Spring Boot, PostgreSQL, WebSocket, News API\\n\\nCollaborative Code Editor (Ongoing) GitHub | Live\\n\\n• Developed real-time collaborative editor with Socket.IO for live sync and integrated chat\\n• Supports multiple concurrent users with conflict resolution and CodeMirror integration\\n• Tech Stack: React, Node.js, Express.js, Socket.IO, CodeMirror\\n\\nAgricultural Marketplace & Advisory Platform (Ongoing) GitHub | Live\\n\\n• Developed full-stack marketplace connecting farmers with buyers using Django MVT architecture\\n• Integrated payment gateway and built admin dashboard for platform monitoring\\n• Implemented user authentication, product listings, and responsive UI design\\n• Tech Stack: Django, Python, SQLite, HTML/CSS, JavaScript, Bootstrap\\n\\nCertifications\\n\\nMachine Learning with Python – Level 1, IBM Apr 2025\\n\\nVerify Credential\\n\\nData Science Methodologies, IBM Oct 2024\\nVerify Credential\\n\\nData Science Tools, IBM Oct 2024\\nVerify Credential\\n\\nmailto:pranavunnikrishnan@hotmail.com\\ntel:+91-9562078409\\nhttps://www.linkedin.com/in/pranav-un/\\nhttps://github.com/Pranav-un\\nhttps://pra-poio.vercel.app/\\nhttps://github.com/Pranav-un/stock-trading-platform\\nhttps://stock-trading-demo.vercel.app/\\nhttps://github.com/Pranav-un/collaborative-code-editor\\nhttps://code-editor-collab.herokuapp.com/\\nhttps://github.com/Pranav-un/agricultural-marketplace\\nhttps://agri-marketplace.herokuapp.com/\\nhttps://www.credly.com/badges/ml-python-level1\\nhttps://www.credly.com/badges/0d91c023-9cbb-4461-97d7-9f4bc5d3d7ed\\nhttps://www.credly.com/badges/f61da9a8-40fa-48f4-b989-e4907f534c62\\n\\n\\tSummary\\n\\tEducation\\n\\tTechnical Skills\\n\\tProjects\\n\\tCertifications\\n\\n\"\n}",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "jobDescription",
+									"value": "Looking for a Java developer with Spring Boot experience",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/recruiter/leaderboard/entry/3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"recruiter",
+								"leaderboard",
+								"entry",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PDF Report",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0MXVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoiUkVDUlVJVEVSIiwiaWF0IjoxNzUwNTg1Mjk3LCJleHAiOjE3NTA2NzE2OTd9.ceodT-2m7Shyosymsfx_t7uUP1aHmAclI9Zi-jU_-N8",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumeText",
+									"value": "\\nPranav Unnikrishnan\\nIdukki, Kerala | pranavunnikrishnan@hotmail.com | +91 9562 078 409 | LinkedIn | GitHub | Portfolio\\n\\nSummary\\n\\nFull stack software engineer skilled in Java, Spring Boot, React, and Python. Strong problem-solver with hands-on\\nexperience in building full stack web applications. MCA student with working knowledge of industry tech stack\\nand strong CS fundamentals.\\n\\nEducation\\n\\nMaster of Computer Applications (MCA), Marian College, Kuttikanam\\n(Autonomous)\\n\\n2024 – 2026 (Expected)\\n\\nBachelor of Computer Applications (BCA), Christ College, Puliyannal 2021 – 2024\\n\\nTechnical Skills\\n\\nLanguages: Java, Python, JavaScript, TypeScript, SQL\\n\\nFrameworks & Libraries: Spring Boot, Django, React, Node.js, Express.js\\n\\nDatabases & Cloud: MySQL, MongoDB, PostgreSQL, AWS, Docker, Kubernetes\\n\\nTools & Technologies: Git, Swagger, WebSocket, Socket.IO, Power BI, JIRA, Render, Vercel\\n\\nProjects\\n\\nStock Broker Paper Trading Platform (Ongoing) GitHub | Live\\n\\n• Built educational trading dashboard with real-time WebSocket updates and trade analytics\\n• Implemented emotion tracking algorithm and news-based trading suggestions using News API\\n• Documented REST APIs with Swagger; integrated PostgreSQL for performance tracking\\n• Tech Stack: React, Spring Boot, PostgreSQL, WebSocket, News API\\n\\nCollaborative Code Editor (Ongoing) GitHub | Live\\n\\n• Developed real-time collaborative editor with Socket.IO for live sync and integrated chat\\n• Supports multiple concurrent users with conflict resolution and CodeMirror integration\\n• Tech Stack: React, Node.js, Express.js, Socket.IO, CodeMirror\\n\\nAgricultural Marketplace & Advisory Platform (Ongoing) GitHub | Live\\n\\n• Developed full-stack marketplace connecting farmers with buyers using Django MVT architecture\\n• Integrated payment gateway and built admin dashboard for platform monitoring\\n• Implemented user authentication, product listings, and responsive UI design\\n• Tech Stack: Django, Python, SQLite, HTML/CSS, JavaScript, Bootstrap\\n\\nCertifications\\n\\nMachine Learning with Python – Level 1, IBM Apr 2025\\n\\nVerify Credential\\n\\nData Science Methodologies, IBM Oct 2024\\nVerify Credential\\n\\nData Science Tools, IBM Oct 2024\\nVerify Credential\\n\\nmailto:pranavunnikrishnan@hotmail.com\\ntel:+91-9562078409\\nhttps://www.linkedin.com/in/pranav-un/\\nhttps://github.com/Pranav-un\\nhttps://pra-poio.vercel.app/\\nhttps://github.com/Pranav-un/stock-trading-platform\\nhttps://stock-trading-demo.vercel.app/\\nhttps://github.com/Pranav-un/collaborative-code-editor\\nhttps://code-editor-collab.herokuapp.com/\\nhttps://github.com/Pranav-un/agricultural-marketplace\\nhttps://agri-marketplace.herokuapp.com/\\nhttps://www.credly.com/badges/ml-python-level1\\nhttps://www.credly.com/badges/0d91c023-9cbb-4461-97d7-9f4bc5d3d7ed\\nhttps://www.credly.com/badges/f61da9a8-40fa-48f4-b989-e4907f534c62\\n\\n\\tSummary\\n\\tEducation\\n\\tTechnical Skills\\n\\tProjects\\n\\tCertifications\\n\\n\"\n}",
+									"type": "text"
+								},
+								{
+									"key": "jobDescription",
+									"value": "Looking for a Java developer with Spring Boot experience",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/recruiter/leaderboard/entry/3/report",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"recruiter",
+								"leaderboard",
+								"entry",
+								"3",
+								"report"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CSV",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0MXVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoiUkVDUlVJVEVSIiwiaWF0IjoxNzUwNTg1Mjk3LCJleHAiOjE3NTA2NzE2OTd9.ceodT-2m7Shyosymsfx_t7uUP1aHmAclI9Zi-jU_-N8",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "resumeText",
+									"value": "\\nPranav Unnikrishnan\\nIdukki, Kerala | pranavunnikrishnan@hotmail.com | +91 9562 078 409 | LinkedIn | GitHub | Portfolio\\n\\nSummary\\n\\nFull stack software engineer skilled in Java, Spring Boot, React, and Python. Strong problem-solver with hands-on\\nexperience in building full stack web applications. MCA student with working knowledge of industry tech stack\\nand strong CS fundamentals.\\n\\nEducation\\n\\nMaster of Computer Applications (MCA), Marian College, Kuttikanam\\n(Autonomous)\\n\\n2024 – 2026 (Expected)\\n\\nBachelor of Computer Applications (BCA), Christ College, Puliyannal 2021 – 2024\\n\\nTechnical Skills\\n\\nLanguages: Java, Python, JavaScript, TypeScript, SQL\\n\\nFrameworks & Libraries: Spring Boot, Django, React, Node.js, Express.js\\n\\nDatabases & Cloud: MySQL, MongoDB, PostgreSQL, AWS, Docker, Kubernetes\\n\\nTools & Technologies: Git, Swagger, WebSocket, Socket.IO, Power BI, JIRA, Render, Vercel\\n\\nProjects\\n\\nStock Broker Paper Trading Platform (Ongoing) GitHub | Live\\n\\n• Built educational trading dashboard with real-time WebSocket updates and trade analytics\\n• Implemented emotion tracking algorithm and news-based trading suggestions using News API\\n• Documented REST APIs with Swagger; integrated PostgreSQL for performance tracking\\n• Tech Stack: React, Spring Boot, PostgreSQL, WebSocket, News API\\n\\nCollaborative Code Editor (Ongoing) GitHub | Live\\n\\n• Developed real-time collaborative editor with Socket.IO for live sync and integrated chat\\n• Supports multiple concurrent users with conflict resolution and CodeMirror integration\\n• Tech Stack: React, Node.js, Express.js, Socket.IO, CodeMirror\\n\\nAgricultural Marketplace & Advisory Platform (Ongoing) GitHub | Live\\n\\n• Developed full-stack marketplace connecting farmers with buyers using Django MVT architecture\\n• Integrated payment gateway and built admin dashboard for platform monitoring\\n• Implemented user authentication, product listings, and responsive UI design\\n• Tech Stack: Django, Python, SQLite, HTML/CSS, JavaScript, Bootstrap\\n\\nCertifications\\n\\nMachine Learning with Python – Level 1, IBM Apr 2025\\n\\nVerify Credential\\n\\nData Science Methodologies, IBM Oct 2024\\nVerify Credential\\n\\nData Science Tools, IBM Oct 2024\\nVerify Credential\\n\\nmailto:pranavunnikrishnan@hotmail.com\\ntel:+91-9562078409\\nhttps://www.linkedin.com/in/pranav-un/\\nhttps://github.com/Pranav-un\\nhttps://pra-poio.vercel.app/\\nhttps://github.com/Pranav-un/stock-trading-platform\\nhttps://stock-trading-demo.vercel.app/\\nhttps://github.com/Pranav-un/collaborative-code-editor\\nhttps://code-editor-collab.herokuapp.com/\\nhttps://github.com/Pranav-un/agricultural-marketplace\\nhttps://agri-marketplace.herokuapp.com/\\nhttps://www.credly.com/badges/ml-python-level1\\nhttps://www.credly.com/badges/0d91c023-9cbb-4461-97d7-9f4bc5d3d7ed\\nhttps://www.credly.com/badges/f61da9a8-40fa-48f4-b989-e4907f534c62\\n\\n\\tSummary\\n\\tEducation\\n\\tTechnical Skills\\n\\tProjects\\n\\tCertifications\\n\\n\"\n}",
+									"type": "text"
+								},
+								{
+									"key": "jobDescription",
+									"value": "Looking for a Java developer with Spring Boot experience",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/recruiter/leaderboard/3/export-csv?topN=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"recruiter",
+								"leaderboard",
+								"3",
+								"export-csv"
+							],
+							"query": [
+								{
+									"key": "topN",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Platform Analytics",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "User Activity Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmFuYXZ1bm5pa3Jpc2huYW4xMDlAZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzUwNTk2NDU2LCJleHAiOjE3NTA2ODI4NTZ9.w5yjT4iesYuHPycRba1c6TAimOxlvxK8vcXXkx93-RY",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/admin/users/2/activity",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"admin",
+								"users",
+								"2",
+								"activity"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmFuYXZ1bm5pa3Jpc2huYW4xMDlAZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzUwNTk2NDU2LCJleHAiOjE3NTA2ODI4NTZ9.w5yjT4iesYuHPycRba1c6TAimOxlvxK8vcXXkx93-RY",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/admin/users/1/deactivate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"admin",
+								"users",
+								"1",
+								"deactivate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Activate User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcmFuYXZ1bm5pa3Jpc2huYW4xMDlAZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzUwNTk2NDU2LCJleHAiOjE3NTA2ODI4NTZ9.w5yjT4iesYuHPycRba1c6TAimOxlvxK8vcXXkx93-RY",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/admin/users/1/activate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"admin",
+								"users",
+								"1",
+								"activate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
