@@ -36,14 +36,6 @@ A comprehensive Applicant Tracking System (ATS) built with Spring Boot and React
 - System monitoring and health checks
 - User activity tracking
 
-### 🤖 AI Features
-
-- **Smart Resume Parsing**: Extract skills, experience, and education
-- **Job Matching**: Intelligent matching algorithms
-- **Improvement Suggestions**: AI-generated recommendations
-- **Experience Calculation**: Automatic years of experience detection
-- **Education Extraction**: Clean course name extraction
-
 ## Technology Stack
 
 ### Backend
@@ -121,70 +113,6 @@ Key environment variables:
 
 Import `Resume ATS Copy.postman_collection.json` into Postman for complete API documentation and testing.
 
-### Key Endpoints
-
-- `POST /api/auth/login` - User authentication
-- `POST /api/resume/upload` - Resume upload
-- `POST /api/analysis/analyze` - Resume analysis
-- `GET /api/recruiter/leaderboard/{jdId}` - Candidate rankings
-- `GET /api/admin/analytics` - Platform analytics
-
-## Default Users
-
-The application creates default users on first startup:
-
-| Role       | Email              | Password    |
-| ---------- | ------------------ | ----------- |
-| Admin      | admin@admin.com    | admin123    |
-| Recruiter  | recruiter@test.com | password123 |
-| Job Seeker | jobseeker@test.com | password123 |
-
-⚠️ **Important**: Change these credentials in production!
-
-## Features Overview
-
-### Dashboard Screenshots
-
-- **Job Seeker Dashboard**: Resume upload, analysis results, improvement suggestions
-- **Recruiter Dashboard**: Candidate management, bulk analysis, leaderboards
-- **Admin Dashboard**: User management, analytics, system monitoring
-
-### AI Analysis Features
-
-- **Resume Parsing**: Extracts key information using Apache Tika
-- **Experience Calculation**: Intelligent years of experience detection
-- **Skill Matching**: Compares resume skills with job requirements
-- **Education Processing**: Clean extraction of educational qualifications
-- **Improvement Suggestions**: AI-generated recommendations for resume enhancement
-
-## Development
-
-### Project Structure
-
-```
-├── backend/                # Spring Boot application
-│   ├── src/main/java/     # Java source code
-│   ├── src/main/resources/ # Configuration files
-│   └── .env.example       # Environment variables template
-├── frontend/              # React application
-│   ├── src/               # TypeScript/React source code
-│   ├── public/            # Static assets
-│   └── package.json       # Dependencies
-└── SETUP.md              # Detailed setup instructions
-```
-
-### Building for Production
-
-```bash
-# Backend
-cd backend
-./mvnw clean package -DskipTests
-
-# Frontend
-cd frontend
-npm run build
-```
-
 ## Contributing
 
 1. Fork the repository
@@ -196,13 +124,3 @@ npm run build
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For setup instructions, see [SETUP.md](SETUP.md).
-
-For issues and questions, please create an issue in the repository.
-
----
-
-**Note**: This application uses external APIs (HuggingFace, Groq) for AI functionality. Ensure you have valid API keys and understand the usage limits and costs associated with these services.
