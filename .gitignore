@@ -1,23 +1,81 @@
-# Environment files
+# Environment files - NEVER commit these
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.production
+.env.staging
+**/
 
-# IDE
+# Backend (Spring Boot) specific
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+!backend/**/src/main/**/target/
+!backend/**/src/test/**/target/
+backend/HELP.md
+
+### Backend IDE ###
+backend/.apt_generated
+backend/.classpath
+backend/.factorypath
+backend/.project
+backend/.settings
+backend/.springBeans
+backend/.sts4-cache
+
+# Frontend (Node.js/React) specific
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/build/
+frontend/coverage/
+
+### Frontend logs ###
+frontend/logs
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# IDE files
 .idea/
 .vscode/
 *.iml
+*.iws
+*.ipr
+*.swp
+*.swo
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 
 # Logs
 *.log
+logs/
 
 # Temporary files
 *.tmp
 *.temp
+
+# Uploads directory (may contain sensitive user files)
+backend/uploads/
+
+# Build artifacts
+*.jar
+*.war
+
+# Database files
+*.db
+*.sqlite
 
 # Screenshots (if not needed for documentation)
 Screenshot*.png
@@ -25,3 +83,16 @@ Screenshot*.png
 # Test files in root
 *Test*.java
 *test*.java
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directories
+coverage/
+*.lcov
+
+# Cache directories
+.cache/
