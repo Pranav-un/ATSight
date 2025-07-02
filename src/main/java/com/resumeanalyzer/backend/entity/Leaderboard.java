@@ -1,5 +1,6 @@
 package com.resumeanalyzer.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class Leaderboard {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "leaderboard", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<LeaderboardEntry> entries;
 
     @PrePersist

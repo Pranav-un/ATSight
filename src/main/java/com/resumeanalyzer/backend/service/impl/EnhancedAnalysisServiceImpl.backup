@@ -37,7 +37,6 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
     private final JobDescriptionRepository jobDescriptionRepository;
     private final AnalysisRepository analysisRepository;
     private final SkillExtractionService skillExtractionService;
-    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -69,7 +68,7 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
         
         // Generate suggestions
         List<String> improvementSuggestions = generateImprovementSuggestions(new ArrayList<>(missingSkills), finalScore);
-        List<String> resumeTips = generateResumeTips(finalScore, missingSkills.size(), new ArrayList<>(missingSkills), jd.getTitle());
+        List<String> resumeTips = generateResumeTips(finalScore, missingSkills.size(), new ArrayList<>(missingSkills), jd.getJobTitle());
         List<String> learningRecommendations = generateLearningRecommendations(new ArrayList<>(missingSkills));
         
         // Categorize skills
@@ -84,8 +83,7 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
         
         // Save analysis
         Analysis analysis = saveAnalysis(user, resume, jd, finalScore, matchedSkills, missingSkills, 
-                                       String.join("; ", improvementSuggestions),
-                                       resumeTips, learningRecommendations);
+                                       String.join("; ", improvementSuggestions));
         
         return AnalysisResponse.builder()
                 .id(analysis.getId())
@@ -119,10 +117,6 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
         try {
             List<String> matchedSkills = objectMapper.readValue(analysis.getMatchedSkills(), List.class);
             List<String> missingSkills = objectMapper.readValue(analysis.getMissingSkills(), List.class);
-            List<String> resumeTips = analysis.getResumeTips() != null ? 
-                objectMapper.readValue(analysis.getResumeTips(), List.class) : new ArrayList<>();
-            List<String> learningRecommendations = analysis.getLearningRecommendations() != null ? 
-                objectMapper.readValue(analysis.getLearningRecommendations(), List.class) : new ArrayList<>();
             
             return AnalysisResponse.builder()
                     .id(analysis.getId())
@@ -139,8 +133,6 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
                     .matchedSkillsCount(matchedSkills.size())
                     .missingSkillsCount(missingSkills.size())
                     .improvementSuggestions(Arrays.asList(analysis.getSuggestions().split("; ")))
-                    .resumeTips(resumeTips)
-                    .learningRecommendations(learningRecommendations)
                     .analyzedAt(analysis.getCreatedAt())
                     .build();
         } catch (JsonProcessingException e) {
@@ -350,8 +342,7 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
     }
 
     private Analysis saveAnalysis(User user, Resume resume, JobDescription jd, double matchScore, 
-                                Set<String> matchedSkills, Set<String> missingSkills, String suggestions,
-                                List<String> resumeTips, List<String> learningRecommendations) {
+                                Set<String> matchedSkills, Set<String> missingSkills, String suggestions) {
         try {
             Analysis analysis = Analysis.builder()
                     .user(user)
@@ -361,8 +352,6 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
                     .matchedSkills(objectMapper.writeValueAsString(matchedSkills))
                     .missingSkills(objectMapper.writeValueAsString(missingSkills))
                     .suggestions(suggestions)
-                    .resumeTips(objectMapper.writeValueAsString(resumeTips))
-                    .learningRecommendations(objectMapper.writeValueAsString(learningRecommendations))
                     .build();
             return analysisRepository.save(analysis);
         } catch (JsonProcessingException e) {
@@ -372,250 +361,49 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
 
     // Smart contextual suggestion generation (no external API dependency)
     private List<String> generateAISuggestions(String context) {
+        // Parse the context to extract key information
+        double matchScore = extractMatchScore(context);
+        List<String> missingSkills = extractMissingSkills(context);
+        String matchLevel = determineMatchLevelFromContext(context);
+        
         List<String> suggestions = new ArrayList<>();
         
-        try {
-            // For now, use rule-based AI-like logic based on context
-            // In the future, this could call Hugging Face API
-            
-            double matchScore = extractMatchScore(context);
-            List<String> missingSkills = extractMissingSkills(context);
-            String matchLevel = determineMatchLevelFromContext(context);
-            
-            if (matchScore >= 0.8) {
-                suggestions.add("Fine-tune your resume to highlight specific achievements that align with the job requirements");
-                suggestions.add("Add quantifiable metrics to demonstrate your impact in previous roles");
-                suggestions.add("Consider getting recommendations from colleagues who can vouch for your skills");
-            } else if (matchScore >= 0.6) {
-                suggestions.add("Focus on acquiring the missing critical skills through online courses or certifications");
-                suggestions.add("Highlight transferable skills that demonstrate your adaptability");
-                suggestions.add("Add relevant projects or volunteer work that showcase your abilities");
-                suggestions.add("Network with professionals in your target industry for insights and opportunities");
-            } else if (matchScore >= 0.4) {
-                suggestions.add("Consider pursuing additional education or training in your target field");
-                suggestions.add("Gain practical experience through internships, freelance work, or personal projects");
-                suggestions.add("Identify and focus on developing the most in-demand skills for your industry");
-                suggestions.add("Build a portfolio that demonstrates your capabilities and learning progress");
-            } else {
-                suggestions.add("Consider a career transition plan that includes skill development and education");
-                suggestions.add("Look for entry-level positions or roles that allow for growth and skill acquisition");
-                suggestions.add("Focus on building foundational skills before targeting advanced positions");
-                suggestions.add("Consider working with a career counselor to develop a strategic plan");
-            }
-            
-            // Add specific suggestions based on missing skills
+        // Generate contextual suggestions based on match level and missing skills
+        if (matchScore >= 0.8) {
+            suggestions.add("Excellent match! Focus on highlighting your strongest achievements that align with the job requirements.");
+            suggestions.add("Consider preparing specific examples of how you've used your matched skills in previous roles.");
+            suggestions.add("Emphasize your leadership and project management experience in your cover letter.");
             if (!missingSkills.isEmpty()) {
-                suggestions.add("Prioritize learning the following critical skills: " + String.join(", ", missingSkills.subList(0, Math.min(3, missingSkills.size()))));
+                suggestions.add("While you're well-qualified, consider gaining basic knowledge in: " + 
+                              String.join(", ", missingSkills.subList(0, Math.min(3, missingSkills.size()))));
             }
-            
-        } catch (Exception e) {
-            logger.warn("AI suggestion generation failed: {}", e.getMessage());
-            // Return empty list, fallback will be used
-        }
-        
-        return suggestions;
-    }
-
-    private List<String> generateFallbackSuggestions(List<String> missingSkills, double matchScore) {
-        List<String> suggestions = new ArrayList<>();
-        
-        // General improvement suggestions based on match score
-        if (matchScore >= 0.7) {
-            suggestions.add("Your profile is strong! Focus on tailoring your resume to highlight relevant achievements");
-            suggestions.add("Add specific metrics and quantifiable results to strengthen your impact statements");
-            suggestions.add("Consider obtaining recommendations or endorsements for your key skills");
-        } else if (matchScore >= 0.5) {
-            suggestions.add("Work on acquiring the missing skills through online courses or certifications");
-            suggestions.add("Emphasize transferable skills that demonstrate your potential");
-            suggestions.add("Add relevant side projects or volunteer work to showcase your abilities");
-            suggestions.add("Network with industry professionals to learn about opportunities");
+        } else if (matchScore >= 0.6) {
+            suggestions.add("Good foundation! Focus on transferable skills that can compensate for missing technical requirements.");
+            if (!missingSkills.isEmpty()) {
+                suggestions.add("Prioritize learning: " + String.join(", ", missingSkills.subList(0, Math.min(3, missingSkills.size()))));
+            }
+            suggestions.add("Highlight relevant projects or experiences that demonstrate your adaptability.");
+            suggestions.add("Consider taking online courses or certifications to bridge skill gaps.");
+        } else if (matchScore >= 0.4) {
+            suggestions.add("This role requires significant upskilling. Consider if this aligns with your career goals.");
+            if (!missingSkills.isEmpty()) {
+                suggestions.add("Critical skills to develop: " + String.join(", ", missingSkills.subList(0, Math.min(4, missingSkills.size()))));
+            }
+            suggestions.add("Look for entry-level positions or internships in this field to gain experience.");
+            suggestions.add("Consider networking with professionals in this industry to understand requirements better.");
         } else {
-            suggestions.add("Consider additional training or education to bridge the skill gap");
-            suggestions.add("Look for entry-level positions that offer learning and growth opportunities");
-            suggestions.add("Build a portfolio of projects that demonstrate your commitment to learning");
-            suggestions.add("Seek mentorship or career guidance to develop a strategic plan");
+            suggestions.add("This position may not be the best fit for your current skill set.");
+            suggestions.add("Consider roles that better align with your existing strengths and experience.");
+            suggestions.add("Focus on positions where you can leverage your transferable skills effectively.");
         }
         
-        // Specific suggestions based on missing skills
-        if (!missingSkills.isEmpty()) {
-            suggestions.add("Focus on developing these critical skills: " + 
-                String.join(", ", missingSkills.subList(0, Math.min(5, missingSkills.size()))));
-            
-            if (missingSkills.size() > 5) {
-                suggestions.add("Prioritize the most important skills first and create a learning timeline");
-            }
-        }
+        // Add sector-agnostic general advice
+        suggestions.add("Tailor your resume and cover letter to emphasize relevant experiences for this specific role.");
+        suggestions.add("Research the company culture and values to better align your application.");
         
-        // Always include these general recommendations
-        suggestions.add("Regularly update your resume to reflect your latest skills and experiences");
-        suggestions.add("Practice interviewing and articulating your value proposition clearly");
-        
-        return suggestions;
+        return suggestions.stream().limit(5).collect(Collectors.toList());
     }
-
-    private List<String> generateAIResumeTips(double matchScore, int missingSkillsCount, List<String> missingSkills, String jobTitle) {
-        List<String> tips = new ArrayList<>();
-        
-        try {
-            // AI-powered contextual resume tips based on the analysis
-            
-            if (matchScore >= 0.8) {
-                tips.add("Your resume is well-aligned! Focus on quantifying achievements with specific metrics and numbers");
-                tips.add("Add industry-specific keywords to improve ATS compatibility for " + (jobTitle.isEmpty() ? "your target role" : jobTitle));
-                tips.add("Include a compelling professional summary that highlights your strongest qualifications");
-            } else if (matchScore >= 0.6) {
-                tips.add("Restructure your resume to prominently feature skills that match the job requirements");
-                tips.add("Add a 'Key Skills' section to highlight both technical and soft skills");
-                tips.add("Include relevant projects or achievements that demonstrate the missing skills: " + 
-                    String.join(", ", missingSkills.subList(0, Math.min(3, missingSkills.size()))));
-            } else {
-                tips.add("Consider a functional resume format to emphasize skills over chronological experience");
-                tips.add("Add a 'Professional Development' section to show your commitment to learning");
-                tips.add("Focus on transferable skills and any relevant coursework or certifications");
-            }
-            
-            // General AI-powered formatting and content tips
-            tips.add("Use strong action verbs like 'implemented', 'optimized', 'led', and 'achieved' to start bullet points");
-            tips.add("Keep your resume to 1-2 pages and use consistent formatting throughout");
-            tips.add("Tailor your resume for each application by incorporating job-specific keywords");
-            
-            // Industry-specific tips based on job title
-            if (!jobTitle.isEmpty()) {
-                if (jobTitle.toLowerCase().contains("developer") || jobTitle.toLowerCase().contains("engineer")) {
-                    tips.add("Include links to your GitHub profile and showcase your best coding projects");
-                    tips.add("Mention specific technologies, frameworks, and programming languages you've used");
-                } else if (jobTitle.toLowerCase().contains("manager") || jobTitle.toLowerCase().contains("lead")) {
-                    tips.add("Highlight your leadership experience and team management accomplishments");
-                    tips.add("Quantify the size of teams or budgets you've managed");
-                } else if (jobTitle.toLowerCase().contains("analyst") || jobTitle.toLowerCase().contains("data")) {
-                    tips.add("Showcase your analytical tools expertise and data visualization skills");
-                    tips.add("Include specific examples of insights or recommendations you've provided");
-                }
-            }
-            
-        } catch (Exception e) {
-            logger.warn("AI resume tips generation failed: {}", e.getMessage());
-        }
-        
-        return tips;
-    }
-
-    private List<String> generateFallbackResumeTips(double matchScore, int missingSkillsCount) {
-        List<String> tips = new ArrayList<>();
-        
-        // Standard resume tips based on analysis
-        tips.add("Use a clean, professional format with consistent font and spacing");
-        tips.add("Start each bullet point with a strong action verb");
-        tips.add("Quantify your achievements with specific numbers and metrics");
-        tips.add("Tailor your resume to match the job description keywords");
-        tips.add("Include a professional summary at the top of your resume");
-        tips.add("List your most relevant experience first");
-        tips.add("Proofread carefully for spelling and grammar errors");
-        tips.add("Keep your resume to 1-2 pages maximum");
-        
-        // Additional tips based on match score
-        if (matchScore < 0.5) {
-            tips.add("Consider highlighting transferable skills and relevant coursework");
-            tips.add("Add a 'Professional Development' section to show continuous learning");
-        }
-        
-        if (missingSkillsCount > 3) {
-            tips.add("Focus on developing and showcasing the most critical missing skills");
-            tips.add("Consider adding a 'Core Competencies' section to highlight your strengths");
-        }
-        
-        return tips;
-    }
-
-    private List<String> generateHuggingFaceResumeTips(double matchScore, int missingSkillsCount, List<String> missingSkills, String jobTitle) {
-        List<String> tips = new ArrayList<>();
-        
-        if (hfToken == null || hfToken.isEmpty()) {
-            logger.warn("Hugging Face token not configured, skipping API call");
-            return tips;
-        }
-        
-        try {
-            // Build a contextual prompt for Hugging Face API
-            StringBuilder prompt = new StringBuilder();
-            prompt.append("As a professional career advisor, provide resume improvement tips for a job application. ");
-            prompt.append("Current match score: ").append(String.format("%.1f%%", matchScore * 100)).append(". ");
-            
-            if (!jobTitle.isEmpty()) {
-                prompt.append("Target position: ").append(jobTitle).append(". ");
-            }
-            
-            if (matchScore >= 0.8) {
-                prompt.append("The candidate has an excellent match. ");
-            } else if (matchScore >= 0.6) {
-                prompt.append("The candidate has a good match but needs some improvements. ");
-            } else if (matchScore >= 0.4) {
-                prompt.append("The candidate has a fair match and needs significant improvements. ");
-            } else {
-                prompt.append("The candidate has a poor match and needs major improvements. ");
-            }
-            
-            if (!missingSkills.isEmpty()) {
-                prompt.append("Missing key skills: ").append(String.join(", ", missingSkills.subList(0, Math.min(5, missingSkills.size())))).append(". ");
-            }
-            
-            prompt.append("\nProvide 6-8 specific, actionable resume tips that will help this candidate improve their application. ");
-            prompt.append("Focus on practical formatting, content, and strategy advice. ");
-            prompt.append("Make each tip concise and professional. Format as a numbered list.");
-            
-            // Call Hugging Face API for text generation
-            String apiUrl = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium";
-            
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(hfToken);
-            
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("inputs", prompt.toString());
-            requestBody.put("parameters", Map.of(
-                "max_length", 500,
-                "temperature", 0.7,
-                "do_sample", true,
-                "pad_token_id", 50256
-            ));
-            
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            
-            ResponseEntity<Object[]> response = restTemplate.postForEntity(apiUrl, entity, Object[].class);
-            
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().length > 0) {
-                ObjectMapper mapper = new ObjectMapper();
-                Map<String, Object> result = mapper.convertValue(response.getBody()[0], Map.class);
-                String generatedText = (String) result.get("generated_text");
-                
-                if (generatedText != null && !generatedText.isEmpty()) {
-                    // Parse the generated text to extract tips
-                    String[] lines = generatedText.split("\\n");
-                    for (String line : lines) {
-                        String cleanLine = cleanGeneratedText(line);
-                        if (!cleanLine.isEmpty() && cleanLine.length() > 10 && cleanLine.length() < 200) {
-                            // Remove numbering if present and clean up
-                            String tip = cleanLine.replaceAll("^\\d+\\.", "").trim();
-                            if (!tip.isEmpty() && !tips.contains(tip)) {
-                                tips.add(tip);
-                            }
-                        }
-                    }
-                }
-            }
-            
-        } catch (Exception e) {
-            logger.warn("Hugging Face API call failed for resume tips: {}", e.getMessage());
-        }
-        
-        // If API failed or returned insufficient tips, fall back to AI-generated tips
-        if (tips.size() < 5) {
-            tips.addAll(generateAIResumeTips(matchScore, missingSkillsCount, missingSkills, jobTitle));
-        }
-        
-        return tips.stream().distinct().limit(8).collect(Collectors.toList());
-    }
-
+    
     private double extractMatchScore(String context) {
         // Extract match score from context string
         if (context.contains("Match score:")) {
@@ -684,112 +472,315 @@ public class EnhancedAnalysisServiceImpl implements EnhancedAnalysisService {
                   .replaceAll("[^a-zA-Z0-9\\s.,!?-]*$", ""); // Remove trailing non-letters
     }
 
-    private List<String> generateSmartLearningRecommendations(List<String> missingSkills) {
-        List<String> recommendations = new ArrayList<>();
+    // Fallback methods for when AI fails
+    private List<String> generateFallbackSuggestions(List<String> missingSkills, double matchScore) {
+        List<String> suggestions = new ArrayList<>();
         
-        try {
-            if (aiSuggestionsEnabled && !missingSkills.isEmpty()) {
-                // Build context for AI-powered learning recommendations
-                StringBuilder context = new StringBuilder();
-                context.append("Generate personalized learning recommendations for someone missing these skills: ");
-                context.append(String.join(", ", missingSkills));
-                context.append(". Provide 5-7 specific learning paths, courses, or resources that would help acquire these skills. ");
-                context.append("Focus on practical, actionable learning opportunities.");
-                
-                // Generate AI recommendations (you could call Hugging Face here too)
-                recommendations.addAll(generateAILearningRecommendations(context.toString()));
+        if (matchScore >= 0.8) {
+            suggestions.add("Excellent match! Your skills align very well with this position.");
+            suggestions.add("Consider highlighting your most relevant projects in your cover letter.");
+            suggestions.add("Focus on quantifiable achievements that demonstrate your expertise.");
+        } else if (matchScore >= 0.6) {
+            suggestions.add("Good match! Focus on the skills you do have in your resume.");
+            if (!missingSkills.isEmpty()) {
+                suggestions.add("Consider gaining experience in: " + String.join(", ", missingSkills.subList(0, Math.min(3, missingSkills.size()))));
             }
-            
-            // Add fallback recommendations if AI fails or returns insufficient results
-            if (recommendations.size() < 5) {
-                recommendations.addAll(generateFallbackLearningRecommendations(missingSkills));
+            suggestions.add("Emphasize transferable skills that can apply to the role.");
+        } else if (matchScore >= 0.4) {
+            suggestions.add("Fair match. Consider upskilling in key areas before applying.");
+            if (!missingSkills.isEmpty()) {
+                suggestions.add("Priority skills to develop: " + String.join(", ", missingSkills.subList(0, Math.min(5, missingSkills.size()))));
             }
-            
-        } catch (Exception e) {
-            logger.warn("Smart learning recommendations generation failed: {}", e.getMessage());
-            recommendations.addAll(generateFallbackLearningRecommendations(missingSkills));
+            suggestions.add("Look for ways to gain practical experience in the missing areas.");
+        } else {
+            suggestions.add("This position may not be the best fit for your current skill set.");
+            suggestions.add("Consider looking for roles that better match your expertise.");
+            suggestions.add("Focus on positions where you can leverage your existing strengths.");
         }
         
-        return recommendations.stream().distinct().limit(7).collect(Collectors.toList());
+        return suggestions;
     }
 
-    private List<String> generateAILearningRecommendations(String context) {
-        List<String> recommendations = new ArrayList<>();
+    private List<String> generateFallbackResumeTips(double matchScore, int missingSkillsCount) {
+        List<String> tips = new ArrayList<>();
         
-        // For now, use rule-based AI-like logic
-        // In the future, this could call Hugging Face API similar to resume tips
+        tips.add("Use action verbs to describe your achievements (e.g., 'Developed', 'Implemented', 'Led')");
+        tips.add("Quantify your accomplishments with specific numbers and metrics");
+        tips.add("Tailor your resume summary to match the job requirements");
         
-        if (context.toLowerCase().contains("java")) {
-            recommendations.add("Complete Oracle Java certification courses on Coursera or Udemy");
-            recommendations.add("Practice Java coding challenges on LeetCode and HackerRank");
-            recommendations.add("Build projects using Spring Boot framework");
+        if (matchScore < 0.7) {
+            tips.add("Consider adding a 'Skills' section to highlight relevant technical abilities");
+            tips.add("Include relevant certifications and training programs");
         }
         
-        if (context.toLowerCase().contains("python")) {
-            recommendations.add("Take Python for Data Science course on edX or Coursera");
-            recommendations.add("Complete Python certification from Python Institute");
-            recommendations.add("Practice Python projects on GitHub and Kaggle");
+        if (missingSkillsCount > 5) {
+            tips.add("Focus on transferable skills that can apply to the missing requirements");
+            tips.add("Consider taking online courses to bridge skill gaps");
         }
         
-        if (context.toLowerCase().contains("javascript") || context.toLowerCase().contains("react") || context.toLowerCase().contains("node")) {
-            recommendations.add("Master JavaScript fundamentals through freeCodeCamp");
-            recommendations.add("Build full-stack projects with React and Node.js");
-            recommendations.add("Complete AWS or Azure cloud development certifications");
-        }
-        
-        if (context.toLowerCase().contains("sql") || context.toLowerCase().contains("database")) {
-            recommendations.add("Get MySQL or PostgreSQL database administrator certification");
-            recommendations.add("Practice SQL queries on SQLBolt and W3Schools");
-            recommendations.add("Learn database design and normalization principles");
-        }
-        
-        if (context.toLowerCase().contains("cloud") || context.toLowerCase().contains("aws") || context.toLowerCase().contains("azure")) {
-            recommendations.add("Earn AWS Solutions Architect or Azure Fundamentals certification");
-            recommendations.add("Complete hands-on cloud projects and labs");
-            recommendations.add("Join cloud computing communities and forums");
-        }
-        
-        // Add general recommendations
-        recommendations.add("Consider bootcamps or intensive courses for rapid skill acquisition");
-        recommendations.add("Join professional communities and attend industry meetups");
-        recommendations.add("Build a portfolio showcasing your new skills");
-        
-        return recommendations;
+        return tips;
     }
 
     private List<String> generateFallbackLearningRecommendations(List<String> missingSkills) {
         List<String> recommendations = new ArrayList<>();
         
-        // General learning recommendations
-        recommendations.add("Consider taking online courses on platforms like Coursera, Udemy, or edX");
-        recommendations.add("Practice coding challenges on platforms like LeetCode, HackerRank, or CodeWars");
-        recommendations.add("Join professional communities and forums related to your target skills");
-        recommendations.add("Attend industry conferences, workshops, and networking events");
-        recommendations.add("Build personal projects to demonstrate your new skills");
+        // Group skills by category and provide specific learning paths
+        Map<String, List<String>> skillCategories = categorizeMissingSkills(missingSkills);
         
-        // Skill-specific recommendations based on missing skills
-        if (missingSkills.stream().anyMatch(skill -> skill.toLowerCase().contains("programming") || 
-                skill.toLowerCase().contains("coding") || skill.toLowerCase().contains("development"))) {
-            recommendations.add("Contribute to open-source projects on GitHub");
-            recommendations.add("Consider bootcamp programs for intensive learning");
+        for (Map.Entry<String, List<String>> entry : skillCategories.entrySet()) {
+            String category = entry.getKey();
+            List<String> skills = entry.getValue();
+            
+            switch (category) {
+                case "Programming Languages":
+                    recommendations.add("Learn " + skills.get(0) + " through platforms like Codecademy, Udemy, or freeCodeCamp");
+                    break;
+                case "Frameworks":
+                    recommendations.add("Master " + skills.get(0) + " by building projects and following official documentation");
+                    break;
+                case "Databases":
+                    recommendations.add("Practice " + skills.get(0) + " with hands-on projects and online tutorials");
+                    break;
+                case "Cloud Platforms":
+                    recommendations.add("Get certified in " + skills.get(0) + " through official certification programs");
+                    break;
+                case "Tools":
+                    recommendations.add("Familiarize yourself with " + skills.get(0) + " through practical usage");
+                    break;
+                default:
+                    recommendations.add("Research and practice " + skills.get(0) + " through relevant courses and projects");
+            }
         }
-        
-        if (missingSkills.stream().anyMatch(skill -> skill.toLowerCase().contains("data") || 
-                skill.toLowerCase().contains("analytics") || skill.toLowerCase().contains("science"))) {
-            recommendations.add("Complete data science specializations on Coursera or edX");
-            recommendations.add("Practice with real datasets on Kaggle");
-        }
-        
-        if (missingSkills.stream().anyMatch(skill -> skill.toLowerCase().contains("cloud") || 
-                skill.toLowerCase().contains("aws") || skill.toLowerCase().contains("azure"))) {
-            recommendations.add("Pursue cloud certifications (AWS, Azure, Google Cloud)");
-            recommendations.add("Set up personal cloud projects and labs");
-        }
-        
-        // Always add these general recommendations
-        recommendations.add("Create a learning schedule and stick to it consistently");
-        recommendations.add("Find a mentor or join study groups for guidance and accountability");
         
         return recommendations;
+    }
+
+    private List<String> generateSmartResumeTips(double matchScore, int missingSkillsCount) {
+        List<String> tips = new ArrayList<>();
+        
+        // Core resume tips for all sectors
+        tips.add("Use strong action verbs to describe your achievements (e.g., 'Developed', 'Implemented', 'Led', 'Managed')");
+        tips.add("Quantify your accomplishments with specific numbers, percentages, and metrics");
+        tips.add("Tailor your resume summary to match the specific job requirements and company culture");
+        
+        // Contextual tips based on match score
+        if (matchScore >= 0.8) {
+            tips.add("Emphasize your most relevant projects and achievements that directly align with the job requirements");
+            tips.add("Include specific examples of how you've used the required skills in previous roles");
+        } else if (matchScore >= 0.6) {
+            tips.add("Highlight transferable skills that can apply to the missing requirements");
+            tips.add("Consider adding a 'Relevant Projects' section to showcase applicable experience");
+        } else {
+            tips.add("Focus on demonstrating your adaptability and willingness to learn new skills");
+            tips.add("Include any relevant certifications, courses, or training programs");
+        }
+        
+        // Tips based on missing skills count
+        if (missingSkillsCount > 5) {
+            tips.add("Consider taking online courses or certifications to bridge significant skill gaps");
+            tips.add("Focus on your learning ability and past examples of quickly acquiring new skills");
+        }
+        
+        // Sector-agnostic professional tips
+        tips.add("Ensure your resume is ATS-friendly with clear formatting and relevant keywords");
+        tips.add("Include a professional summary that highlights your career objectives and key strengths");
+        
+        return tips;
+    }
+
+    // AI-powered contextual resume tips generation
+    private List<String> generateAIResumeTips(double matchScore, int missingSkillsCount, List<String> missingSkills, String jobTitle) {
+        List<String> tips = new ArrayList<>();
+        
+        // Core professional resume tips (always include these)
+        tips.add("Use strong action verbs to describe your achievements (e.g., 'Developed', 'Implemented', 'Led', 'Managed')");
+        tips.add("Quantify your accomplishments with specific numbers, percentages, and metrics");
+        
+        // AI-generated contextual tips based on match score and job requirements
+        if (matchScore >= 0.8) {
+            tips.add("Your skills align excellently! Emphasize your most relevant projects that directly showcase the required competencies");
+            tips.add("Include specific examples and metrics that demonstrate your expertise in the matched skill areas");
+            tips.add("Consider adding a brief 'Key Achievements' section highlighting your most impressive accomplishments");
+        } else if (matchScore >= 0.6) {
+            tips.add("Highlight transferable skills and experiences that can compensate for any missing technical requirements");
+            tips.add("Create a 'Relevant Projects' section to showcase applicable experience, even from different contexts");
+            tips.add("Tailor your professional summary to bridge the gap between your background and the job requirements");
+        } else if (matchScore >= 0.4) {
+            tips.add("Focus on your learning ability and adaptability - provide examples of how you've quickly mastered new skills");
+            tips.add("Emphasize soft skills, leadership qualities, and any relevant certifications or training");
+            tips.add("Consider a functional resume format that highlights your strengths rather than chronological experience");
+        } else {
+            tips.add("Consider repositioning your experience to better align with the role's requirements");
+            tips.add("Focus on transferable skills and demonstrate your potential for growth in this field");
+            tips.add("Include any relevant volunteer work, side projects, or self-directed learning that shows your interest in this area");
+        }
+        
+        // Tips based on missing skills count
+        if (missingSkillsCount > 5) {
+            tips.add("Include any relevant coursework, online certifications, or training programs you've completed or are pursuing");
+            tips.add("Add a 'Professional Development' section showing your commitment to continuous learning");
+        } else if (missingSkillsCount > 0) {
+            tips.add("Consider mentioning your familiarity with the missing skills or your plans to develop them");
+        }
+        
+        // Job-specific formatting tips
+        if (jobTitle != null && !jobTitle.isEmpty()) {
+            if (jobTitle.toLowerCase().contains("senior") || jobTitle.toLowerCase().contains("lead")) {
+                tips.add("Emphasize leadership experience, team management, and strategic decision-making capabilities");
+                tips.add("Include examples of mentoring others or driving organizational change");
+            } else if (jobTitle.toLowerCase().contains("junior") || jobTitle.toLowerCase().contains("entry")) {
+                tips.add("Highlight your enthusiasm for learning and any relevant academic projects or internships");
+                tips.add("Include any technical skills gained through coursework, bootcamps, or self-study");
+            }
+        }
+        
+        // Technical enhancement tips
+        tips.add("Ensure your resume is ATS-friendly with clear section headers and standard formatting");
+        tips.add("Tailor your resume summary to match the specific job requirements and company culture");
+        tips.add("Include relevant keywords from the job description naturally throughout your resume");
+        
+        return tips.stream().limit(9).collect(Collectors.toList());
+    }
+    
+    // Enhanced AI-powered resume tips using Hugging Face API
+    private List<String> generateHuggingFaceResumeTips(double matchScore, int missingSkillsCount, List<String> missingSkills, String jobTitle) {
+        List<String> tips = new ArrayList<>();
+        
+        try {
+            // Build context for Hugging Face API
+            StringBuilder prompt = new StringBuilder();
+            prompt.append("Generate professional resume tips for a job applicant with the following situation:\n");
+            prompt.append("Job Title: ").append(jobTitle != null ? jobTitle : "General Position").append("\n");
+            prompt.append("Match Score: ").append(String.format("%.0f", matchScore * 100)).append("%\n");
+            prompt.append("Missing Skills Count: ").append(missingSkillsCount).append("\n");
+            
+            if (!missingSkills.isEmpty()) {
+                prompt.append("Missing Skills: ").append(String.join(", ", missingSkills.subList(0, Math.min(5, missingSkills.size())))).append("\n");
+            }
+            
+            prompt.append("\nProvide 6-8 specific, actionable resume tips that will help this candidate improve their application. ");
+            prompt.append("Focus on practical formatting, content, and strategy advice. ");
+            prompt.append("Make each tip concise and professional. Format as a numbered list.");
+            
+            // Call Hugging Face API for text generation
+            String apiUrl = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(hfToken);
+            
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("inputs", prompt.toString());
+            requestBody.put("parameters", Map.of(
+                "max_length", 500,
+                "temperature", 0.7,
+                "do_sample", true,
+                "pad_token_id", 50256
+            ));
+            
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            RestTemplate restTemplate = new RestTemplate();
+            
+            ResponseEntity<Object[]> response = restTemplate.postForEntity(apiUrl, entity, Object[].class);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().length > 0) {
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> result = mapper.convertValue(response.getBody()[0], Map.class);
+                String generatedText = (String) result.get("generated_text");
+                
+                if (generatedText != null && !generatedText.isEmpty()) {
+                    // Parse the generated tips
+                    String[] lines = generatedText.split("\n");
+                    for (String line : lines) {
+                        line = line.trim();
+                        if (line.matches("^\\d+\\..*") && line.length() > 10) {
+                            // Remove the number prefix and add to tips
+                            String tip = line.replaceFirst("^\\d+\\.\\s*", "");
+                            if (tip.length() > 15 && tips.size() < 8) {
+                                tips.add(tip);
+                            }
+                        }
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.warn("Hugging Face API call failed for resume tips: {}", e.getMessage());
+        }
+        
+        // If API failed or returned insufficient tips, fall back to AI-generated tips
+        if (tips.size() < 5) {
+            tips.addAll(generateAIResumeTips(matchScore, missingSkillsCount, missingSkills, jobTitle));
+        }
+        
+        return tips.stream().distinct().limit(8).collect(Collectors.toList());
+    }
+    
+    private double extractMatchScore(String context) {
+        // Extract match score from context string
+        if (context.contains("Match score:")) {
+            try {
+                String scorePart = context.split("Match score:")[1].split("%")[0].trim();
+                return Double.parseDouble(scorePart) / 100.0;
+            } catch (Exception e) {
+                return 0.5; // default
+            }
+        }
+        return 0.5;
+    }
+    
+    private List<String> extractMissingSkills(String context) {
+        List<String> skills = new ArrayList<>();
+        if (context.contains("Missing critical skills:")) {
+            try {
+                String skillsPart = context.split("Missing critical skills:")[1].split("\\.")[0].trim();
+                return Arrays.asList(skillsPart.split(", "));
+            } catch (Exception e) {
+                return skills;
+            }
+        }
+        return skills;
+    }
+    
+    private String determineMatchLevelFromContext(String context) {
+        if (context.contains("Excellent match")) return "Excellent";
+        if (context.contains("Good match")) return "Good";
+        if (context.contains("Fair match")) return "Fair";
+        if (context.contains("Poor match")) return "Poor";
+        return "Unknown";
+    }
+
+    private String buildSuggestionContext(List<String> missingSkills, double matchScore) {
+        StringBuilder context = new StringBuilder();
+        
+        context.append("Job application analysis for resume matching: ");
+        context.append("Match score: ").append(String.format("%.1f%%", matchScore * 100)).append(". ");
+        
+        if (matchScore >= 0.8) {
+            context.append("Excellent match - candidate has strong alignment with job requirements. ");
+        } else if (matchScore >= 0.6) {
+            context.append("Good match - candidate has solid foundation but some gaps. ");
+        } else if (matchScore >= 0.4) {
+            context.append("Fair match - candidate needs significant upskilling. ");
+        } else {
+            context.append("Poor match - candidate may not be suitable for this role. ");
+        }
+        
+        if (!missingSkills.isEmpty()) {
+            context.append("Missing critical skills: ").append(String.join(", ", missingSkills)).append(". ");
+        }
+        
+        context.append("Provide 3-5 specific, actionable suggestions for improvement that are relevant to any industry or sector. Focus on practical steps the candidate can take.");
+        
+        return context.toString();
+    }
+
+    private String cleanGeneratedText(String text) {
+        // Clean up generated text
+        return text.replaceAll("\\n", " ")
+                  .replaceAll("\\s+", " ")
+                  .trim()
+                  .replaceAll("^[^a-zA-Z]*", "") // Remove leading non-letters
+                  .replaceAll("[^a-zA-Z0-9\\s.,!?-]*$", ""); // Remove trailing non-letters
     }
 }

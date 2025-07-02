@@ -43,6 +43,14 @@ public class Analysis {
     @Column(columnDefinition = "LONGTEXT")
     private String suggestions;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String resumeTips; // JSON array
+
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String learningRecommendations; // JSON array
+
     private LocalDateTime createdAt;
 
     @PrePersist

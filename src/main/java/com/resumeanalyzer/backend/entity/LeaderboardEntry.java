@@ -1,5 +1,6 @@
 package com.resumeanalyzer.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ public class LeaderboardEntry {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leaderboard_id", nullable = false)
+    @JsonBackReference
     private Leaderboard leaderboard;
 
     private String candidateName;
@@ -26,6 +28,8 @@ public class LeaderboardEntry {
     private Resume resume;
 
     private Double matchScore; // Nullable if no JD
+
+    private Integer rankPosition; // 1, 2, 3, etc. - leaderboard position
 
     @Lob
     @Column(columnDefinition = "LONGTEXT")
@@ -42,6 +46,12 @@ public class LeaderboardEntry {
     @Lob
     @Column(columnDefinition = "LONGTEXT")
     private String hackathons;
+
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String notes;
+
+    private Boolean isFavorite = false;
 
     private LocalDateTime createdAt;
 

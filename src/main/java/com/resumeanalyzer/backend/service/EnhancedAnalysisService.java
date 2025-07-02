@@ -9,5 +9,6 @@ public interface EnhancedAnalysisService {
     double calculateSkillMatchScore(java.util.List<String> resumeSkills, java.util.List<String> jdSkills);
     java.util.List<String> generateImprovementSuggestions(java.util.List<String> missingSkills, double matchScore);
     java.util.List<String> generateResumeTips(double matchScore, int missingSkillsCount);
+    java.util.List<String> generateResumeTips(double matchScore, int missingSkillsCount, java.util.List<String> missingSkills, String jobTitle);
     java.util.List<String> generateLearningRecommendations(java.util.List<String> missingSkills);
 } 

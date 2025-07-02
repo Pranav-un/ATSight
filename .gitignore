@@ -4,6 +4,12 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Environment files - IMPORTANT: Never commit these ###
+.env
+.env.local
+.env.production
+.env.staging
+
 ### STS ###
 .apt_generated
 .classpath
@@ -31,3 +37,18 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Uploads directory (may contain sensitive files) ###
+uploads/
+
+### Logs ###
+*.log
+logs/
+
+### Temporary files ###
+*.tmp
+*.temp
+
+### OS ###
+.DS_Store
+Thumbs.db

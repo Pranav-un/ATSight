@@ -58,8 +58,8 @@ public class AnalysisController {
                     .categoryScores(Map.of()) // Empty for old data
                     .skillCategories(List.of()) // Empty for old data
                     .improvementSuggestions(analysis.getSuggestions() != null ? List.of(analysis.getSuggestions()) : List.of())
-                    .resumeTips(List.of()) // Empty for old data
-                    .learningRecommendations(List.of()) // Empty for old data
+                    .resumeTips(parseSkillsJson(analysis.getResumeTips()))
+                    .learningRecommendations(parseSkillsJson(analysis.getLearningRecommendations()))
                     .analyzedAt(analysis.getCreatedAt())
                     .analysisDuration("N/A") // Not available for old data
                     .build();
