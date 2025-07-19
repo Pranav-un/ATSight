@@ -12,7 +12,6 @@
 backend/target/
 backend/.mvn/wrapper/maven-wrapper.jar
 !backend/**/src/main/**/target/
-!backend/**/src/test/**/target/
 backend/HELP.md
 
 ### Backend IDE ###
@@ -79,10 +78,6 @@ backend/uploads/
 
 # Screenshots (if not needed for documentation)
 Screenshot*.png
-
-# Test files in root
-*Test*.java
-*test*.java
 
 # Runtime data
 pids
