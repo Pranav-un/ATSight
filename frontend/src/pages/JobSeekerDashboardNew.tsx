@@ -33,6 +33,8 @@ import ProfileSection from "../components/ProfileSection";
 import QuickActions from "../components/QuickActions";
 import AnalysisResults from "../components/AnalysisResults";
 import ProfileModal from "../components/ProfileModal";
+import UserProfileModal from "../components/UserProfileModal";
+import ProfilePicture from "../components/ProfilePicture";
 import CustomLoader from "../components/CustomLoader";
 import type {
   DashboardStats as DashboardStatsType,
@@ -47,6 +49,24 @@ interface User {
   createdAt: string;
   updatedAt: string;
   active: boolean;
+}
+
+interface UserProfile {
+  id?: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  jobTitle?: string;
+  company?: string;
+  bio?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  websiteUrl?: string;
+  profilePicture?: string;
+  dateOfBirth?: string;
+  role: string;
 }
 
 interface Resume {
@@ -90,12 +110,12 @@ interface EnhancedAnalysis {
 
 const AnalysisLoadingAnimation = () => {
   const loadingTexts = [
-    "Parsing your resume...",
+    "Processing resume content...",
     "Analyzing job requirements...",
-    "Matching skills and experience...",
-    "Generating recommendations...",
-    "Preparing detailed insights...",
-    "Almost ready...",
+    "Matching qualifications and skills...",
+    "Generating compatibility report...",
+    "Calculating alignment scores...",
+    "Finalizing analysis...",
   ];
 
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
@@ -142,7 +162,7 @@ const AnalysisLoadingAnimation = () => {
             />
           </div>
 
-          <p className="text-dark-600">Running advanced AI analysis...</p>
+          <p className="text-dark-600">Processing comprehensive analysis...</p>
         </div>
       </div>
     </motion.div>
@@ -153,12 +173,13 @@ export default function JobSeekerDashboard() {
   const tabs = [
     { id: "overview" as const, name: "Overview", icon: FiHome },
     { id: "analyze" as const, name: "Analyze", icon: FiSearch },
+    { id: "results" as const, name: "Results", icon: FiFileText },
     { id: "history" as const, name: "History", icon: FiArchive },
     { id: "analytics" as const, name: "Analytics", icon: FiTrendingUp },
   ];
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "analyze" | "history" | "analytics"
+    "overview" | "analyze" | "results" | "history" | "analytics"
   >("overview");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
@@ -175,6 +196,13 @@ export default function JobSeekerDashboard() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [notifications] = useState(3); // Mock notification count
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showUserProfileModal, setShowUserProfileModal] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    firstName: "",
+    lastName: "",
+    email: "user@example.com", // TODO: Get from auth context
+    role: "Job Seeker",
+  });
   const [dashboardStats, setDashboardStats] =
     useState<DashboardStatsType | null>(null);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(
@@ -199,6 +227,7 @@ export default function JobSeekerDashboard() {
 
     console.log("User authenticated, loading data...");
 
+    loadUserProfile();
     loadProfileResumes();
     loadAnalysisHistory();
     loadDashboardStats();
@@ -209,10 +238,45 @@ export default function JobSeekerDashboard() {
   useEffect(() => {
     console.log("Analysis results changed:", analysisResults);
     if (analysisResults) {
-      console.log("Analysis results are now available, should display in UI");
-      // Optional: Auto-scroll to results or show notification
+      console.log(
+        "Analysis results are now available, switching to results tab"
+      );
+      setActiveTab("results");
     }
   }, [analysisResults]);
+
+  const loadUserProfile = async () => {
+    try {
+      console.log("Loading user profile from backend...");
+      const response = await apiCall("/api/user/profile", {}, false);
+      if (response.ok) {
+        const profileData = await response.json();
+        console.log("Loaded user profile:", profileData);
+        setUserProfile(profileData);
+      } else {
+        console.error("Failed to load user profile:", response.status);
+        // If profile doesn't exist, set email from localStorage as fallback
+        const userEmail = localStorage.getItem("userEmail");
+        if (userEmail) {
+          setUserProfile((prev) => ({
+            ...prev,
+            email: userEmail,
+          }));
+        }
+        // The backend should create a default profile automatically on first access
+      }
+    } catch (error) {
+      console.error("Error loading user profile:", error);
+      // Set email from localStorage as fallback
+      const userEmail = localStorage.getItem("userEmail");
+      if (userEmail) {
+        setUserProfile((prev) => ({
+          ...prev,
+          email: userEmail,
+        }));
+      }
+    }
+  };
 
   const loadProfileResumes = async () => {
     console.log("Loading profile resumes...");
@@ -497,6 +561,80 @@ export default function JobSeekerDashboard() {
     window.location.href = "/login";
   };
 
+  const deleteResumeFromProfile = async (resumeId: number): Promise<void> => {
+    // Show confirmation dialog
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this resume? This action cannot be undone."
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      console.log("Deleting resume with ID:", resumeId);
+      const response = await apiCall(
+        `/api/resume/${resumeId}`,
+        {
+          method: "DELETE",
+        },
+        false
+      );
+
+      if (response.ok) {
+        // Refresh the resume list
+        await loadProfileResumes();
+        console.log("Resume deleted successfully");
+        alert("Resume deleted successfully!");
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to delete resume:", response.status, errorText);
+        if (response.status === 401 || response.status === 403) {
+          alert("Authentication error. Please try logging in again.");
+        } else {
+          alert(`Failed to delete resume: ${errorText || "Please try again."}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting resume:", error);
+      alert(
+        "Error deleting resume. Please check your connection and try again."
+      );
+    }
+  };
+
+  const saveUserProfile = async (profile: UserProfile): Promise<boolean> => {
+    try {
+      console.log("Saving user profile:", profile);
+      const response = await apiCall(
+        "/api/user/profile",
+        {
+          method: "PUT",
+          body: JSON.stringify(profile),
+        },
+        false
+      );
+
+      if (response.ok) {
+        const updatedProfile = await response.json();
+        console.log(
+          "Profile saved successfully, updated profile:",
+          updatedProfile
+        );
+        setUserProfile(updatedProfile);
+        return true;
+      } else {
+        console.error("Failed to save profile:", response.status);
+        const errorText = await response.text();
+        console.error("Save profile error:", errorText);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      return false;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-cyan-50">
       {/* Analysis Loading Overlay */}
@@ -517,9 +655,9 @@ export default function JobSeekerDashboard() {
                 <FiTarget className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-dark-800">ATSSight</h1>
+                <h1 className="text-2xl font-bold text-dark-800">ATSight</h1>
                 <p className="text-sm text-dark-600">
-                  Resume Intelligence Platform
+                  Professional Resume Analysis
                 </p>
               </div>
             </div>
@@ -546,10 +684,14 @@ export default function JobSeekerDashboard() {
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                   className="flex items-center space-x-2 p-2 text-dark-600 hover:text-dark-800 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
-                    <FiUser className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="hidden sm:block font-medium">Profile</span>
+                  <ProfilePicture
+                    src={userProfile.profilePicture}
+                    size="sm"
+                    alt={`${userProfile.firstName} ${userProfile.lastName}`}
+                  />
+                  <span className="hidden sm:block font-medium">
+                    {userProfile.firstName || "Profile"}
+                  </span>
                 </button>
 
                 {showProfileDropdown && (
@@ -561,12 +703,22 @@ export default function JobSeekerDashboard() {
                   >
                     <button
                       onClick={() => {
-                        setShowProfileModal(true);
+                        setShowUserProfileModal(true);
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center w-full px-4 py-2 text-left text-dark-700 hover:bg-gray-50"
                     >
                       <FiUser className="w-4 h-4 mr-3" />
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowProfileModal(true);
+                        setShowProfileDropdown(false);
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-left text-dark-700 hover:bg-gray-50"
+                    >
+                      <FiFileText className="w-4 h-4 mr-3" />
                       Manage Resumes
                     </button>
                     <button className="flex items-center w-full px-4 py-2 text-left text-dark-700 hover:bg-gray-50">
@@ -643,15 +795,17 @@ export default function JobSeekerDashboard() {
                 <div className="lg:col-span-2">
                   <ProfileSection
                     user={{
-                      email: "user@example.com", // TODO: Get from auth context
-                      role: "Job Seeker",
+                      email: userProfile.email,
+                      role: userProfile.role,
+                      firstName: userProfile.firstName,
+                      lastName: userProfile.lastName,
+                      profilePicture: userProfile.profilePicture,
+                      jobTitle: userProfile.jobTitle,
+                      location: userProfile.location,
                     }}
                     resumes={profileResumes}
                     onUploadResume={uploadResumeToProfile}
-                    onDeleteResume={async () => {
-                      // TODO: Implement delete resume functionality
-                      console.log("Delete resume functionality needed");
-                    }}
+                    onDeleteResume={deleteResumeFromProfile}
                   />
                 </div>
               </div>
@@ -848,25 +1002,21 @@ export default function JobSeekerDashboard() {
                   Run Analysis
                 </button>
               </div>
+            </motion.div>
+          )}
 
-              {/* Debug Info */}
-              {process.env.NODE_ENV === "development" && (
-                <div className="bg-gray-100 p-4 rounded-lg text-xs">
-                  <p>Debug Info:</p>
-                  <p>
-                    Analysis Results: {analysisResults ? "Available" : "None"}
-                  </p>
-                  <p>Active Tab: {activeTab}</p>
-                  {analysisResults && (
-                    <p>Match Level: {analysisResults.matchLevel}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Analysis Results */}
+          {/* Results Tab */}
+          {activeTab === "results" && (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
               {analysisResults ? (
                 <motion.div
-                  className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+                  className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
@@ -889,15 +1039,28 @@ export default function JobSeekerDashboard() {
                       setAnalysisResults(null);
                       setJobDescription("");
                       setUploadedFile(null);
+                      setActiveTab("analyze");
                     }}
                   />
                 </motion.div>
               ) : (
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                  <div className="text-center text-gray-500 py-8">
-                    <FiBarChart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>Run an analysis to see results here</p>
+                <div className="bg-white rounded-xl shadow-sm p-16 border border-gray-100 text-center">
+                  <div className="bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                    <FiBarChart className="w-12 h-12 text-teal-600" />
                   </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                    No Analysis Results
+                  </h3>
+                  <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                    Run an analysis to see detailed results and insights about
+                    your resume compatibility with job descriptions.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab("analyze")}
+                    className="px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:from-teal-600 hover:to-cyan-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    Start Analysis
+                  </button>
                 </div>
               )}
             </motion.div>
@@ -919,7 +1082,7 @@ export default function JobSeekerDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-3xl font-bold mb-2">
-                        📚 Analysis History
+                        Analysis History
                       </h2>
                       <p className="text-gray-300 text-lg">
                         Track your resume analysis journey and improvements
@@ -1062,7 +1225,7 @@ export default function JobSeekerDashboard() {
                                 </span>
                               </div>
                               <div className="flex items-center space-x-1">
-                                <span>⏱️</span>
+                                <FiClock className="w-4 h-4" />
                                 <span>
                                   {new Date(
                                     analysis.analyzedAt
@@ -1070,7 +1233,7 @@ export default function JobSeekerDashboard() {
                                 </span>
                               </div>
                               <div className="flex items-center space-x-1">
-                                <span>⚡</span>
+                                <FiClock className="w-4 h-4" />
                                 <span>
                                   {analysis.analysisDuration || "N/A"}
                                 </span>
@@ -1079,7 +1242,7 @@ export default function JobSeekerDashboard() {
                             <button
                               onClick={() => {
                                 setAnalysisResults(analysis);
-                                setActiveTab("analyze");
+                                setActiveTab("results");
                               }}
                               className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium flex items-center space-x-2 shadow-sm"
                             >
@@ -1132,7 +1295,7 @@ export default function JobSeekerDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-3xl font-bold mb-2">
-                        📊 Analytics Dashboard
+                        Analytics Dashboard
                       </h2>
                       <p className="text-teal-100 text-lg">
                         Deep insights into your resume performance and market
@@ -1148,7 +1311,7 @@ export default function JobSeekerDashboard() {
                         className="px-4 py-2 text-sm bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all flex items-center space-x-2 border border-white/20"
                         disabled={loadingAnalytics || loadingStats}
                       >
-                        <span>🔄 Refresh</span>
+                        <span>Refresh</span>
                         {(loadingAnalytics || loadingStats) && (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         )}
@@ -1159,22 +1322,22 @@ export default function JobSeekerDashboard() {
                         defaultValue="30days"
                       >
                         <option value="7days" className="text-gray-800">
-                          📅 Last 7 days
+                          Last 7 days
                         </option>
                         <option value="30days" className="text-gray-800">
-                          📅 Last 30 days
+                          Last 30 days
                         </option>
                         <option value="90days" className="text-gray-800">
-                          📅 Last 3 months
+                          Last 3 months
                         </option>
                         <option value="180days" className="text-gray-800">
-                          📅 Last 6 months
+                          Last 6 months
                         </option>
                         <option value="365days" className="text-gray-800">
-                          📅 Last year
+                          Last year
                         </option>
                         <option value="all" className="text-gray-800">
-                          📅 All time
+                          All time
                         </option>
                       </select>
                     </div>
@@ -1224,8 +1387,8 @@ export default function JobSeekerDashboard() {
                           <div className="text-xs text-green-600 font-medium">
                             {analyticsData?.monthlyTrends &&
                             Object.keys(analyticsData.monthlyTrends).length > 1
-                              ? "↗️ Trending up"
-                              : "↗️ +5% growth"}
+                              ? "Trending up"
+                              : "+5% growth"}
                           </div>
                         </div>
                       </div>
@@ -1316,7 +1479,7 @@ export default function JobSeekerDashboard() {
                               analysisHistory.length}
                           </div>
                           <div className="text-xs text-orange-600 font-medium">
-                            📈 Total completed
+                            Total completed
                           </div>
                         </div>
                       </div>
@@ -1397,7 +1560,7 @@ export default function JobSeekerDashboard() {
                     <FiBarChart className="w-12 h-12 text-teal-600" />
                   </div>
                   <h3 className="text-2xl font-bold text-gray-800 mb-3">
-                    🚀 Start Your Analytics Journey
+                    Start Your Analytics Journey
                   </h3>
                   <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
                     Run your first analysis to unlock powerful insights and
@@ -1406,15 +1569,15 @@ export default function JobSeekerDashboard() {
                   </p>
                   <div className="space-y-3 mb-8">
                     <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                      <span>📊</span>
+                      <FiTrendingUp className="w-4 h-4" />
                       <span>Track performance trends over time</span>
                     </div>
                     <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                      <span>🎯</span>
+                      <FiTarget className="w-4 h-4" />
                       <span>Discover your most valuable skills</span>
                     </div>
                     <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                      <span>🏢</span>
+                      <FiFileText className="w-4 h-4" />
                       <span>Analyze industry-specific performance</span>
                     </div>
                   </div>
@@ -1422,7 +1585,7 @@ export default function JobSeekerDashboard() {
                     onClick={() => setActiveTab("analyze")}
                     className="px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:from-teal-600 hover:to-cyan-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    ✨ Run Your First Analysis
+                    Run Your First Analysis
                   </button>
                 </motion.div>
               )}
@@ -1437,15 +1600,20 @@ export default function JobSeekerDashboard() {
         onClose={() => setShowProfileModal(false)}
         resumes={profileResumes}
         onUploadResume={uploadResumeToProfile}
-        onDeleteResume={(resumeId: number) => {
-          // TODO: Implement delete resume functionality
-          console.log("Delete resume:", resumeId);
-        }}
+        onDeleteResume={deleteResumeFromProfile}
         onSelectResume={(resumeId: number) => {
           setSelectedResumeId(resumeId);
           setActiveTab("analyze");
           setShowProfileModal(false);
         }}
+      />
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={showUserProfileModal}
+        onClose={() => setShowUserProfileModal(false)}
+        user={userProfile}
+        onSaveProfile={saveUserProfile}
       />
     </div>
   );

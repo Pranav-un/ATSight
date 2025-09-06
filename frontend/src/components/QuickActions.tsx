@@ -6,6 +6,7 @@ import {
   FiTrendingUp,
   FiClock,
   FiUsers,
+  FiChevronRight,
 } from "react-icons/fi";
 
 interface QuickAction {
@@ -73,16 +74,16 @@ export default function QuickActions({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      className="bg-white rounded-xl shadow-lg border border-gray-100 p-6"
     >
       <div className="flex items-center mb-6">
-        <div className="p-2 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg mr-3">
+        <div className="p-2 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg mr-3 shadow-md">
           <FiTarget className="w-5 h-5 text-white" />
         </div>
         <h3 className="text-xl font-bold text-dark-800">Quick Actions</h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-3">
         {actions.map((action, index) => (
           <motion.button
             key={action.title}
@@ -91,30 +92,41 @@ export default function QuickActions({
             transition={{ delay: index * 0.1 }}
             onClick={action.onClick}
             disabled={action.disabled}
-            className={`p-4 rounded-xl border-2 border-transparent text-left transition-all transform hover:scale-105 ${
+            className={`group w-full p-4 rounded-xl border-2 text-left transition-all transform hover:scale-[1.02] shadow-sm ${
               action.disabled
-                ? "bg-gray-50 cursor-not-allowed opacity-50"
-                : "hover:border-gray-200 hover:shadow-md"
+                ? "bg-gray-50 cursor-not-allowed opacity-50 border-gray-200"
+                : "hover:border-teal-100 hover:shadow-lg bg-gradient-to-br from-white to-gray-50/50 border-transparent"
             }`}
           >
-            <div className="flex items-start">
-              <div
-                className={`p-3 rounded-lg bg-gradient-to-br ${action.bgColor} text-white mr-4 flex-shrink-0`}
-              >
-                <action.icon className="w-5 h-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-dark-800 mb-1">
-                  {action.title}
-                </h4>
-                <p className="text-sm text-dark-600 leading-relaxed">
-                  {action.description}
-                </p>
-                {action.disabled && (
-                  <p className="text-xs text-red-500 mt-1">
-                    Upload a resume first
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div
+                  className={`p-3 rounded-lg bg-gradient-to-br ${action.bgColor} text-white mr-4 flex-shrink-0 shadow-md`}
+                >
+                  <action.icon className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-dark-800 mb-1 text-base">
+                    {action.title}
+                  </h4>
+                  <p className="text-sm text-dark-600 leading-relaxed">
+                    {action.description}
                   </p>
-                )}
+                  {action.disabled && (
+                    <p className="text-xs text-red-500 mt-2 font-medium">
+                      Upload a resume first
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <FiChevronRight
+                  className={`w-5 h-5 transition-transform ${
+                    action.disabled
+                      ? "text-gray-400"
+                      : "text-gray-400 group-hover:text-teal-600 group-hover:translate-x-1"
+                  }`}
+                />
               </div>
             </div>
           </motion.button>
@@ -122,15 +134,19 @@ export default function QuickActions({
       </div>
 
       {/* Additional Tips */}
-      <div className="mt-6 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg">
+      <div className="mt-6 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg border border-teal-100">
         <div className="flex items-start">
-          <FiUsers className="w-5 h-5 text-teal-600 mr-2 mt-0.5 flex-shrink-0" />
+          <div className="p-2 bg-teal-100 rounded-lg mr-3 flex-shrink-0">
+            <FiUsers className="w-4 h-4 text-teal-600" />
+          </div>
           <div>
-            <h4 className="font-medium text-teal-800 mb-1">Pro Tip</h4>
-            <p className="text-sm text-teal-700">
+            <h4 className="font-semibold text-teal-800 mb-1">
+              Professional Tip
+            </h4>
+            <p className="text-sm text-teal-700 leading-relaxed">
               Run multiple analyses to compare how your resume performs against
               different job descriptions. Use the insights to optimize your
-              resume for better matches!
+              resume for better matches.
             </p>
           </div>
         </div>

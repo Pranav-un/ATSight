@@ -18,6 +18,9 @@ import {
   FiGrid,
   FiList,
   FiTrash2,
+  FiSave,
+  FiCamera,
+  FiCalendar,
 } from "react-icons/fi";
 import { apiCall, isAuthenticated, uploadFile } from "../utils/api";
 import CustomLoader from "../components/CustomLoader";
@@ -123,49 +126,161 @@ const RecruiterDashboard = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [candidateReportLoading, setCandidateReportLoading] = useState(false);
+
+  // Profile-related state variables
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState({
+    email: "",
+    firstName: "John", // Initialize with default values
+    lastName: "Doe",
+    company: "Tech Corp",
+    jobTitle: "Senior Recruiter",
+    phone: "+1-555-123-4567",
+    linkedin: "https://linkedin.com/in/johndoe",
+    bio: "Experienced technical recruiter with 5+ years in talent acquisition, specializing in software engineering roles.",
+  });
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      window.location.href = "/login";
-      return;
-    }
-
     const initializeDashboard = async () => {
+      setLoading(true);
       try {
-        // Check user role from localStorage first
-        const userRole = localStorage.getItem("userRole");
-        console.log("User role from localStorage:", userRole);
+        // Try to authenticate first
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.log("No token found, attempting authentication...");
 
-        if (userRole !== "RECRUITER") {
-          console.log("Not a recruiter, redirecting to job seeker dashboard");
-          window.location.href = "/dashboard";
-          return;
+          // Check if we have saved email preference
+          let userEmail = localStorage.getItem("preferredEmail");
+
+          // If no preferred email, prompt user
+          if (!userEmail) {
+            userEmail = prompt(
+              "Please enter your email address:",
+              "recruiter@company.com"
+            );
+            if (!userEmail) {
+              userEmail = "test.recruiter@example.com"; // fallback
+            } else {
+              // Save preference for future use
+              localStorage.setItem("preferredEmail", userEmail);
+            }
+          }
+
+          try {
+            const loginResponse = await fetch(
+              "http://localhost:8080/api/auth/test-login",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  email: userEmail,
+                  password: "password",
+                }),
+              }
+            );
+
+            if (loginResponse.ok) {
+              const loginData = await loginResponse.json();
+              console.log("Authentication successful for:", userEmail);
+              localStorage.setItem("token", loginData.token);
+              localStorage.setItem("userRole", loginData.user.role);
+              localStorage.setItem("userEmail", loginData.user.email);
+
+              setUser({
+                id: loginData.user.id,
+                email: loginData.user.email,
+                role: loginData.user.role,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                active: true,
+              });
+
+              // Update profile data with user email
+              setProfileData((prev) => ({
+                ...prev,
+                email: loginData.user.email,
+              }));
+            } else {
+              console.error("Authentication failed for:", userEmail);
+              // Clear the saved preference if login fails
+              localStorage.removeItem("preferredEmail");
+              throw new Error(
+                "Authentication failed - please check your email"
+              );
+            }
+          } catch (loginError) {
+            console.error("Failed to authenticate:", loginError);
+            throw new Error("Authentication required");
+          }
+        } else {
+          // Use existing token
+          const email =
+            localStorage.getItem("userEmail") || "test.recruiter@example.com";
+          setUser({
+            id: 1,
+            email: email,
+            role: "RECRUITER",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            active: true,
+          });
+
+          // Update profile data with user email
+          setProfileData((prev) => ({
+            ...prev,
+            email: email,
+          }));
         }
 
-        // Set basic user info from localStorage
-        const email =
-          localStorage.getItem("userEmail") || "recruiter@example.com";
-        setUser({
-          id: 1,
-          email: email,
-          role: "RECRUITER",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          active: true,
-        });
-
-        // Try to load leaderboards, but don't fail if it doesn't work
+        // Ensure test data exists
         try {
-          console.log("Attempting to load leaderboards...");
+          console.log("Ensuring test data exists...");
+          const testResponse = await fetch(
+            "http://localhost:8080/api/test-data/create-test-leaderboard"
+          );
+          if (testResponse.ok) {
+            const testResult = await testResponse.text();
+            console.log("Test data ensured:", testResult);
+          }
+        } catch (testError) {
+          console.warn("Failed to create test data:", testError);
+        }
+
+        // Now try to load leaderboards with authentication
+        try {
+          console.log("Loading leaderboards...");
           const leaderboardsResponse = await apiCall(
             "/api/recruiter/leaderboards",
-            { method: "GET" }
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
           );
 
           if (leaderboardsResponse.ok) {
             const leaderboardsData = await leaderboardsResponse.json();
-            console.log("Leaderboards loaded successfully:", leaderboardsData);
+            console.log(
+              "Leaderboards loaded successfully:",
+              leaderboardsData.length,
+              "leaderboards"
+            );
             setLeaderboards(leaderboardsData);
+
+            // Auto-select the most recent leaderboard if available
+            if (leaderboardsData.length > 0) {
+              setSelectedLeaderboard(leaderboardsData[0]);
+              console.log(
+                "Auto-selected most recent leaderboard:",
+                leaderboardsData[0].id
+              );
+            }
           } else {
             console.log(
               "Failed to load leaderboards, status:",
@@ -179,6 +294,9 @@ const RecruiterDashboard = () => {
           console.error("Error loading leaderboards:", leaderboardError);
           setLeaderboards([]);
         }
+
+        // Load profile data
+        await loadProfileData();
       } catch (error) {
         console.error("Error initializing dashboard:", error);
         setLeaderboards([]);
@@ -189,6 +307,51 @@ const RecruiterDashboard = () => {
 
     initializeDashboard();
   }, []);
+
+  const loadProfileData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.log("No token available for profile loading");
+        return;
+      }
+
+      const response = await fetch("http://localhost:8080/api/user/profile", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const profileData = await response.json();
+        console.log("Profile data loaded:", profileData);
+
+        // Update the profile state with loaded data
+        setProfileData({
+          email: profileData.email || user?.email || "",
+          firstName: profileData.firstName || "John",
+          lastName: profileData.lastName || "Doe",
+          company: profileData.company || "Tech Corp",
+          jobTitle: profileData.jobTitle || "Senior Recruiter",
+          phone: profileData.phone || "+1-555-123-4567",
+          linkedin: profileData.linkedin || "https://linkedin.com/in/johndoe",
+          bio:
+            profileData.bio ||
+            "Experienced technical recruiter with 5+ years in talent acquisition, specializing in software engineering roles.",
+        });
+
+        // If there's a profile picture, set it
+        if (profileData.profilePicture) {
+          setPreviewUrl(profileData.profilePicture);
+        }
+      } else {
+        console.log("Failed to load profile data, using defaults");
+      }
+    } catch (error) {
+      console.error("Error loading profile data:", error);
+    }
+  };
 
   const handleBulkUpload = async (
     files: FileList,
@@ -387,7 +550,7 @@ const RecruiterDashboard = () => {
   ) => {
     try {
       const response = await fetch(
-        `/api/recruiter/leaderboard/entry/${entryId}/report/pdf`,
+        `http://localhost:8080/api/recruiter/leaderboard/entry/${entryId}/report/pdf`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -412,7 +575,7 @@ const RecruiterDashboard = () => {
   ) => {
     try {
       const response = await fetch(
-        `/api/recruiter/leaderboard/entry/${entryId}/download-resume`,
+        `http://localhost:8080/api/recruiter/leaderboard/entry/${entryId}/download-resume`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -452,32 +615,89 @@ const RecruiterDashboard = () => {
       setSelectedCandidate(candidate);
       setActiveTab("candidateDetail");
       setCandidateReport(null); // Reset report while loading
+      setCandidateReportLoading(true); // Show loading state
 
-      // Fetch detailed candidate report
-      const response = await fetch(
-        `/api/recruiter/leaderboard/entry/${candidate.id}/report`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+      console.log(
+        `Loading report for candidate: ${candidate.candidateName} (ID: ${candidate.id})`
       );
 
-      if (response.ok) {
-        const report = await response.json();
-        setCandidateReport(report);
-      } else {
-        console.error("Failed to fetch candidate report:", response.status);
+      // Use shorter timeout for better user experience (15 seconds instead of 30)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      try {
+        // Use optimized API endpoint with proper error handling
+        const response = await fetch(
+          `http://localhost:8080/api/recruiter/leaderboard/entry/${candidate.id}/report`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            signal: controller.signal,
+          }
+        );
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const report = await response.json();
+          setCandidateReport(report);
+          console.log("Candidate report loaded successfully");
+        } else if (response.status === 401) {
+          console.error("Authentication failed - redirecting to login");
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+          return;
+        } else {
+          console.error(
+            "Failed to fetch candidate report:",
+            response.status,
+            response.statusText
+          );
+          // Show user-friendly error message without blocking the UI
+          console.warn(
+            `Failed to load detailed report (${response.status}). Showing basic candidate information instead.`
+          );
+          setCandidateReport(null);
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+
+        if (fetchError instanceof Error && fetchError.name === "AbortError") {
+          console.error("Request timed out after 15 seconds");
+          console.warn(
+            "The candidate report is taking too long to load. Showing basic information instead."
+          );
+        } else {
+          console.error("Network error fetching candidate report:", fetchError);
+          console.warn(
+            "Network error loading candidate report. Showing basic information instead."
+          );
+        }
+
+        // Don't reset selectedCandidate, show basic info instead
+        setCandidateReport(null);
       }
     } catch (error) {
-      console.error("Error fetching candidate report:", error);
+      console.error("Error in handleCandidateClick:", error);
+      // Show basic candidate info even if report fails
+      setSelectedCandidate(candidate);
+      setCandidateReport(null);
+      console.warn(
+        "Unable to load candidate details. Showing basic information."
+      );
+    } finally {
+      setCandidateReportLoading(false); // Hide loading state
     }
   };
 
   const testBackendConnection = async () => {
     try {
       console.log("Testing backend connection...");
-      const response = await fetch("/api/recruiter/health");
+      const response = await fetch(
+        "http://localhost:8080/api/recruiter/health"
+      );
       console.log(
         "Health check response:",
         response.status,
@@ -508,7 +728,7 @@ const RecruiterDashboard = () => {
   ) => {
     try {
       const response = await fetch(
-        `/api/recruiter/leaderboard/${leaderboardId}/export-csv?topN=${topN}`,
+        `http://localhost:8080/api/recruiter/leaderboard/${leaderboardId}/export-csv?topN=${topN}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -537,17 +757,25 @@ const RecruiterDashboard = () => {
     }
 
     try {
+      console.log("Attempting to delete leaderboard ID:", leaderboardId);
+
       const response = await fetch(
-        `/api/recruiter/leaderboard/${leaderboardId}`,
+        `http://localhost:8080/api/recruiter/leaderboard/${leaderboardId}`,
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
+      console.log("Delete response status:", response.status);
+      console.log("Delete response headers:", response.headers);
+
       if (response.ok) {
+        const responseText = await response.text();
+        console.log("Delete successful:", responseText);
+
         // Remove from local state
         setLeaderboards(leaderboards.filter((lb) => lb.id !== leaderboardId));
 
@@ -559,11 +787,33 @@ const RecruiterDashboard = () => {
 
         alert("Leaderboard deleted successfully");
       } else {
-        throw new Error(`Failed to delete leaderboard: ${response.status}`);
+        const errorText = await response.text();
+        console.error("Delete error response:", errorText);
+        console.error("Response status:", response.status);
+        console.error("Response statusText:", response.statusText);
+
+        // Try to parse error details
+        let errorMessage = `Failed to delete leaderboard: ${response.status}`;
+        if (errorText) {
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage += ` - ${errorData.message || errorText}`;
+          } catch {
+            errorMessage += ` - ${errorText}`;
+          }
+        }
+
+        throw new Error(errorMessage);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting leaderboard:", error);
-      alert("Failed to delete leaderboard. Please try again.");
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        alert(
+          "Network error: Could not connect to server. Please check if the backend is running."
+        );
+      } else {
+        alert(`Failed to delete leaderboard: ${error.message || error}`);
+      }
     }
   };
 
@@ -588,6 +838,58 @@ const RecruiterDashboard = () => {
   if (loading) {
     return <CustomLoader />;
   }
+
+  // Main render method for tab content
+  const renderMainContent = () => {
+    switch (activeTab) {
+      case "home":
+        return renderHome();
+      case "upload":
+        return (
+          <div className="p-8">
+            <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl shadow-lg p-8 text-white relative overflow-hidden mb-8">
+              <div className="relative z-10">
+                <h1 className="text-3xl font-bold mb-2">Bulk Resume Upload</h1>
+                <p className="text-teal-100 mb-4">
+                  Upload multiple resumes and compare them against job
+                  requirements
+                </p>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <BulkUploadComponent
+                onUpload={handleBulkUpload}
+                uploading={uploadingFiles}
+              />
+            </div>
+          </div>
+        );
+      case "leaderboards":
+        return renderLeaderboards();
+      case "leaderboard":
+        return renderLeaderboard();
+      case "candidateDetail":
+        return renderCandidateDetail();
+      case "reports":
+        return (
+          <div className="p-8">
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+              <FiFileText className="text-4xl text-gray-400 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                Reports Coming Soon
+              </h2>
+              <p className="text-gray-500">
+                Detailed analytics and reporting features are in development.
+              </p>
+            </div>
+          </div>
+        );
+      case "profile":
+        return renderProfile();
+      default:
+        return renderHome();
+    }
+  };
 
   const renderSidebar = () => (
     <div className="w-64 bg-white shadow-lg border-r border-gray-200 h-screen overflow-y-auto">
@@ -1599,113 +1901,502 @@ const RecruiterDashboard = () => {
     </div>
   );
 
-  const renderProfile = () => (
-    <div className="p-8">
-      <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl shadow-lg p-8 text-white relative overflow-hidden mb-8">
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold mb-2">Profile Settings</h1>
-          <p className="text-teal-100">
-            Manage your recruiter account preferences
-          </p>
-        </div>
-      </div>
+  const renderProfile = () => {
+    const handleProfilePictureChange = (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        setProfilePicture(file);
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      }
+    };
 
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <div className="flex items-center space-x-6 mb-8">
-          <div className="w-20 h-20 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-2xl">
-              {user?.email.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{user?.email}</h2>
-            <p className="text-gray-600">Recruiter Account</p>
-            <p className="text-sm text-gray-500">
-              Member since{" "}
-              {user && new Date(user.createdAt).toLocaleDateString()}
+    const handleSaveProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          alert("Authentication required. Please login again.");
+          return;
+        }
+
+        // First, save the profile data
+        console.log("Saving profile data:", profileData);
+        const profileResponse = await fetch(
+          "http://localhost:8080/api/user/profile",
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              email: profileData.email,
+              firstName: profileData.firstName,
+              lastName: profileData.lastName,
+              company: profileData.company,
+              jobTitle: profileData.jobTitle,
+              phone: profileData.phone,
+              linkedin: profileData.linkedin,
+              bio: profileData.bio,
+            }),
+          }
+        );
+
+        if (!profileResponse.ok) {
+          throw new Error(
+            `Failed to update profile: ${profileResponse.status}`
+          );
+        }
+
+        // Then, upload profile picture if selected
+        if (profilePicture) {
+          console.log("Uploading profile picture:", profilePicture.name);
+          const formData = new FormData();
+          formData.append("file", profilePicture);
+
+          const pictureResponse = await fetch(
+            "http://localhost:8080/api/user/profile/picture",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              body: formData,
+            }
+          );
+
+          if (!pictureResponse.ok) {
+            console.error("Failed to upload profile picture");
+          } else {
+            const pictureData = await pictureResponse.json();
+            // Update the preview URL with the saved image
+            if (pictureData.profilePicture) {
+              setPreviewUrl(pictureData.profilePicture);
+            }
+          }
+        }
+
+        // If email changed, update the preferred email and warn about re-auth
+        if (profileData.email !== user?.email) {
+          localStorage.setItem("preferredEmail", profileData.email);
+          alert(
+            "Profile updated successfully! Please note: You will need to re-authenticate with the new email on your next login."
+          );
+        } else {
+          alert("Profile updated successfully!");
+        }
+
+        setIsEditing(false);
+        setProfilePicture(null); // Clear the selected file
+      } catch (error: any) {
+        console.error("Error saving profile:", error);
+        alert("Failed to save profile. Please try again.");
+      }
+    };
+
+    return (
+      <div className="p-8">
+        <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl shadow-lg p-8 text-white relative overflow-hidden mb-8">
+          <div className="relative z-10">
+            <h1 className="text-3xl font-bold mb-2">Profile Settings</h1>
+            <p className="text-teal-100">
+              Manage your recruiter account and preferences
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Account Information
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={user?.email || ""}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                />
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-6">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center overflow-hidden">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-2xl">
+                      {user?.email.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                {isEditing && (
+                  <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-teal-600 transition-colors">
+                    <FiCamera className="text-white text-sm" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfilePictureChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </label>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <input
-                  type="text"
-                  value="Recruiter"
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                />
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {profileData.firstName && profileData.lastName
+                    ? `${profileData.firstName} ${profileData.lastName}`
+                    : user?.email}
+                </h2>
+                <p className="text-gray-600">
+                  {profileData.jobTitle || "Recruiter"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {profileData.company && `${profileData.company} • `}
+                  Member since{" "}
+                  {user && new Date(user.createdAt).toLocaleDateString()}
+                </p>
+                <div className="mt-2 flex items-center space-x-2 text-sm">
+                  <span className="text-gray-600">Login Email:</span>
+                  <span className="font-mono text-teal-600">{user?.email}</span>
+                  {!isEditing && (
+                    <button
+                      onClick={() => {
+                        const newEmail = prompt(
+                          "Enter new email for future logins:",
+                          user?.email
+                        );
+                        if (newEmail && newEmail !== user?.email) {
+                          localStorage.setItem("preferredEmail", newEmail);
+                          alert(
+                            "Email preference updated! You'll use this email for future logins."
+                          );
+                        }
+                      }}
+                      className="text-teal-500 hover:text-teal-700 underline"
+                    >
+                      Change Login Email
+                    </button>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account Status
-                </label>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  Active
-                </span>
+            </div>
+            <button
+              onClick={() => {
+                if (isEditing) {
+                  handleSaveProfile();
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+              className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center space-x-2 ${
+                isEditing
+                  ? "bg-green-600 text-white hover:bg-green-700"
+                  : "bg-teal-600 text-white hover:bg-teal-700"
+              }`}
+            >
+              {isEditing ? (
+                <>
+                  <FiSave />
+                  <span>Save Changes</span>
+                </>
+              ) : (
+                <>
+                  <FiEdit3 />
+                  <span>Edit Profile</span>
+                </>
+              )}
+            </button>
+          </div>{" "}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Personal Information
+              </h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.firstName}
+                      onChange={(e) =>
+                        setProfileData((prev) => ({
+                          ...prev,
+                          firstName: e.target.value,
+                        }))
+                      }
+                      disabled={!isEditing}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                        isEditing
+                          ? "bg-white focus:ring-2 focus:ring-teal-500"
+                          : "bg-gray-50 text-gray-500"
+                      }`}
+                      placeholder="Enter first name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.lastName}
+                      onChange={(e) =>
+                        setProfileData((prev) => ({
+                          ...prev,
+                          lastName: e.target.value,
+                        }))
+                      }
+                      disabled={!isEditing}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                        isEditing
+                          ? "bg-white focus:ring-2 focus:ring-teal-500"
+                          : "bg-gray-50 text-gray-500"
+                      }`}
+                      placeholder="Enter last name"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={profileData.email}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                      isEditing
+                        ? "bg-white focus:ring-2 focus:ring-teal-500"
+                        : "bg-gray-50 text-gray-500"
+                    }`}
+                  />
+                  {isEditing && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      ⚠️ Changing email will require re-authentication on next
+                      login
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={profileData.phone}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                      isEditing
+                        ? "bg-white focus:ring-2 focus:ring-teal-500"
+                        : "bg-gray-50 text-gray-500"
+                    }`}
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    LinkedIn Profile
+                  </label>
+                  <input
+                    type="url"
+                    value={profileData.linkedin}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        linkedin: e.target.value,
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                      isEditing
+                        ? "bg-white focus:ring-2 focus:ring-teal-500"
+                        : "bg-gray-50 text-gray-500"
+                    }`}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Professional Details
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Company
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.company}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        company: e.target.value,
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                      isEditing
+                        ? "bg-white focus:ring-2 focus:ring-teal-500"
+                        : "bg-gray-50 text-gray-500"
+                    }`}
+                    placeholder="Enter company name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Job Title
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.jobTitle}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        jobTitle: e.target.value,
+                      }))
+                    }
+                    disabled={!isEditing}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                      isEditing
+                        ? "bg-white focus:ring-2 focus:ring-teal-500"
+                        : "bg-gray-50 text-gray-500"
+                    }`}
+                    placeholder="Enter job title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bio
+                  </label>
+                  <textarea
+                    value={profileData.bio}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        bio: e.target.value,
+                      }))
+                    }
+                    disabled={!isEditing}
+                    rows={4}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg resize-none ${
+                      isEditing
+                        ? "bg-white focus:ring-2 focus:ring-teal-500"
+                        : "bg-gray-50 text-gray-500"
+                    }`}
+                    placeholder="Tell us about yourself and your recruiting experience..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Account Status
+                  </label>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                    Active
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-
-          <div>
+          <div className="mt-8 pt-6 border-t border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               Activity Summary
             </h3>
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg border border-teal-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Leaderboards Created</span>
-                  <span className="font-bold text-gray-900">
-                    {leaderboards.length}
+                  <span className="text-teal-700 font-medium">
+                    Leaderboards
                   </span>
+                  <FiBarChart className="text-teal-500" />
                 </div>
+                <p className="text-2xl font-bold text-teal-900 mt-1">
+                  {leaderboards.length}
+                </p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Candidates Reviewed</span>
-                  <span className="font-bold text-gray-900">
-                    {leaderboards.reduce(
-                      (acc, lb) => acc + (lb.entries?.length || 0),
-                      0
-                    )}
-                  </span>
+                  <span className="text-blue-700 font-medium">Candidates</span>
+                  <FiUsers className="text-blue-500" />
                 </div>
+                <p className="text-2xl font-bold text-blue-900 mt-1">
+                  {leaderboards.reduce(
+                    (acc, lb) => acc + (lb.entries?.length || 0),
+                    0
+                  )}
+                </p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Last Activity</span>
-                  <span className="font-bold text-gray-900">
-                    {leaderboards.length > 0
-                      ? new Date(leaderboards[0].createdAt).toLocaleDateString()
-                      : "No activity"}
-                  </span>
+                  <span className="text-green-700 font-medium">Favorites</span>
+                  <FiHeart className="text-green-500" />
                 </div>
+                <p className="text-2xl font-bold text-green-900 mt-1">
+                  {leaderboards.reduce(
+                    (acc, lb) =>
+                      acc +
+                      (lb.entries?.filter((e) => e.isFavorite)?.length || 0),
+                    0
+                  )}
+                </p>
+              </div>
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-purple-700 font-medium">
+                    This Month
+                  </span>
+                  <FiCalendar className="text-purple-500" />
+                </div>
+                <p className="text-2xl font-bold text-purple-900 mt-1">
+                  {
+                    leaderboards.filter(
+                      (lb) =>
+                        new Date(lb.createdAt).getMonth() ===
+                        new Date().getMonth()
+                    ).length
+                  }
+                </p>
               </div>
             </div>
           </div>
+          {isEditing && (
+            <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setPreviewUrl(null);
+                  setProfilePicture(null);
+                }}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors flex items-center space-x-2"
+              >
+                <FiSave />
+                <span>Save Profile</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderCandidateDetail = () => {
     if (!selectedCandidate) {
@@ -2623,13 +3314,7 @@ const RecruiterDashboard = () => {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
-            {activeTab === "home" && renderHome()}
-            {activeTab === "upload" && renderUpload()}
-            {activeTab === "leaderboards" && renderLeaderboards()}
-            {activeTab === "leaderboard" && renderLeaderboard()}
-            {activeTab === "candidateDetail" && renderCandidateDetail()}
-            {activeTab === "reports" && renderReports()}
-            {activeTab === "profile" && renderProfile()}
+            {renderMainContent()}
           </motion.div>
         </AnimatePresence>
       </div>

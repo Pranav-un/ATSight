@@ -71,9 +71,6 @@ export default function AnalysisResults({
   analysis,
   onNewAnalysis,
 }: AnalysisResultsProps) {
-  // Debug log to see what data we're receiving
-  console.log("AnalysisResults received data:", analysis);
-
   // Safety check - if analysis data is incomplete, show error
   if (!analysis) {
     return (
@@ -175,7 +172,7 @@ export default function AnalysisResults({
       <div className="bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl p-6 text-white">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Analysis Complete!</h2>
+            <h2 className="text-2xl font-bold mb-2">Analysis Complete</h2>
             <p className="opacity-90">
               {analysis.resumeFileName} vs {analysis.jobTitle}
             </p>

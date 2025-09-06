@@ -4,7 +4,8 @@ import com.resumeanalyzer.backend.service.SkillExtractionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.stereotype.Service;
+// Disabled to avoid conflicts with FastSkillExtractionServiceImpl
+// @Service
 import org.springframework.web.client.RestTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service
+// @Service - Disabled to use FastSkillExtractionServiceImpl as primary
 @RequiredArgsConstructor
 public class SkillExtractionServiceImpl implements SkillExtractionService {
     @Value("${huggingface.api.token}")

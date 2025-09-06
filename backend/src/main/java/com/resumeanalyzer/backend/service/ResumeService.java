@@ -8,4 +8,5 @@ import java.util.List;
 public interface ResumeService {
     Resume uploadResume(MultipartFile file, User user);
     List<Resume> getResumeVersions(User user);
+    boolean deleteResume(Long resumeId, User user);
 } 

@@ -14,6 +14,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+        System.err.println("RuntimeException caught: " + ex.getMessage());
+        ex.printStackTrace();
+        
+        // Handle specific error types with appropriate status codes
+        String message = ex.getMessage();
+        if (message != null) {
+            if (message.contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+            } else if (message.contains("Access denied")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+            }
+        }
+        
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 

@@ -8,11 +8,20 @@
 .env.staging
 **/
 
+# API Keys and secrets
+*.postman_collection.json
+*.postman_environment.json
+**/*secret*
+**/*key*
+**/*token*
+.env*
+
 # Backend (Spring Boot) specific
 backend/target/
 backend/.mvn/wrapper/maven-wrapper.jar
 !backend/**/src/main/**/target/
 backend/HELP.md
+backend/uploads/
 
 ### Backend IDE ###
 backend/.apt_generated
@@ -91,3 +100,4 @@ coverage/
 
 # Cache directories
 .cache/
+"Resume ATS Copy.postman_collection.json" 

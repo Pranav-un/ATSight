@@ -4,11 +4,16 @@ import com.resumeanalyzer.backend.entity.Analysis;
 import com.resumeanalyzer.backend.entity.User;
 import com.resumeanalyzer.backend.service.AnalysisService;
 import com.resumeanalyzer.backend.service.EnhancedAnalysisService;
+import com.resumeanalyzer.backend.service.UserService;
+import com.resumeanalyzer.backend.util.JwtUtil;
 import com.resumeanalyzer.backend.dto.AnalysisResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 import com.resumeanalyzer.backend.dto.AnalysisHistoryDTO;
 import com.resumeanalyzer.backend.entity.JobDescription;
 import com.resumeanalyzer.backend.entity.Resume;
@@ -23,47 +28,129 @@ import com.resumeanalyzer.backend.dto.AnalysisTrendDTO;
 public class AnalysisController {
     private final AnalysisService analysisService;
     private final EnhancedAnalysisService enhancedAnalysisService;
+    private final UserService userService;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/analyze")
-    public Analysis analyze(@RequestBody AnalyzeRequest request, @AuthenticationPrincipal User user) {
-        return analysisService.analyze(request.getResumeId(), request.getJdId(), user);
+    public ResponseEntity<Analysis> analyze(@RequestBody AnalyzeRequest request, HttpServletRequest httpRequest) {
+        try {
+            // Extract JWT token and validate
+            String authHeader = httpRequest.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            String token = authHeader.substring(7);
+            
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            String email = jwtUtil.extractUsername(token);
+            
+            // Get user by email
+            User user = userService.loadUserByEmail(email);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Analysis result = analysisService.analyze(request.getResumeId(), request.getJdId(), user);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping("/analyze-enhanced")
-    public Object analyzeEnhanced(@RequestBody AnalyzeRequest request, @AuthenticationPrincipal User user) {
-        return enhancedAnalysisService.performDetailedAnalysis(request.getResumeId(), request.getJdId(), user);
+    public ResponseEntity<Object> analyzeEnhanced(@RequestBody AnalyzeRequest request, HttpServletRequest httpRequest) {
+        try {
+            // Extract JWT token and validate
+            String authHeader = httpRequest.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            String token = authHeader.substring(7);
+            
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            String email = jwtUtil.extractUsername(token);
+            
+            // Get user by email
+            User user = userService.loadUserByEmail(email);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Object result = enhancedAnalysisService.performDetailedAnalysis(request.getResumeId(), request.getJdId(), user);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/history")
-    public List<AnalysisResponse> getAnalysisHistory(@AuthenticationPrincipal User user) {
-        return analysisService.getAnalysisHistory(user).stream().map(analysis -> {
-            Resume resume = analysis.getResume();
-            JobDescription jd = analysis.getJobDescription();
+    public ResponseEntity<List<AnalysisResponse>> getAnalysisHistory(HttpServletRequest httpRequest) {
+        try {
+            // Extract JWT token and validate
+            String authHeader = httpRequest.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            String token = authHeader.substring(7);
             
-            // Convert old Analysis entity to new AnalysisResponse format
-            return AnalysisResponse.builder()
-                    .id(analysis.getId())
-                    .resumeId(resume.getId())
-                    .resumeFileName(resume.getFileName())
-                    .jobDescriptionId(jd.getId())
-                    .jobTitle(jd.getTitle())
-                    .overallMatchScore(analysis.getMatchScore())
-                    .matchPercentage((int) Math.round(analysis.getMatchScore() * 100))
-                    .matchLevel(getMatchLevel(analysis.getMatchScore()))
-                    .matchedSkills(parseSkillsJson(analysis.getMatchedSkills()))
-                    .missingSkills(parseSkillsJson(analysis.getMissingSkills()))
-                    .totalRequiredSkills(parseSkillsJson(analysis.getMatchedSkills()).size() + parseSkillsJson(analysis.getMissingSkills()).size())
-                    .matchedSkillsCount(parseSkillsJson(analysis.getMatchedSkills()).size())
-                    .missingSkillsCount(parseSkillsJson(analysis.getMissingSkills()).size())
-                    .categoryScores(Map.of()) // Empty for old data
-                    .skillCategories(List.of()) // Empty for old data
-                    .improvementSuggestions(analysis.getSuggestions() != null ? List.of(analysis.getSuggestions()) : List.of())
-                    .resumeTips(parseSkillsJson(analysis.getResumeTips()))
-                    .learningRecommendations(parseSkillsJson(analysis.getLearningRecommendations()))
-                    .analyzedAt(analysis.getCreatedAt())
-                    .analysisDuration("N/A") // Not available for old data
-                    .build();
-        }).collect(Collectors.toList());
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            String email = jwtUtil.extractUsername(token);
+            
+            // Get user by email
+            User user = userService.loadUserByEmail(email);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            List<AnalysisResponse> result = analysisService.getAnalysisHistory(user).stream().map(analysis -> {
+                Resume resume = analysis.getResume();
+                JobDescription jd = analysis.getJobDescription();
+                
+                // Convert old Analysis entity to new AnalysisResponse format
+                return AnalysisResponse.builder()
+                        .id(analysis.getId())
+                        .resumeId(resume.getId())
+                        .resumeFileName(resume.getFileName())
+                        .jobDescriptionId(jd.getId())
+                        .jobTitle(jd.getTitle())
+                        .overallMatchScore(analysis.getMatchScore())
+                        .matchPercentage((int) Math.round(analysis.getMatchScore() * 100))
+                        .matchLevel(getMatchLevel(analysis.getMatchScore()))
+                        .matchedSkills(parseSkillsJson(analysis.getMatchedSkills()))
+                        .missingSkills(parseSkillsJson(analysis.getMissingSkills()))
+                        .totalRequiredSkills(parseSkillsJson(analysis.getMatchedSkills()).size() + parseSkillsJson(analysis.getMissingSkills()).size())
+                        .matchedSkillsCount(parseSkillsJson(analysis.getMatchedSkills()).size())
+                        .missingSkillsCount(parseSkillsJson(analysis.getMissingSkills()).size())
+                        .categoryScores(Map.of()) // Empty for old data
+                        .skillCategories(List.of()) // Empty for old data
+                        .improvementSuggestions(analysis.getSuggestions() != null ? List.of(analysis.getSuggestions()) : List.of())
+                        .resumeTips(parseSkillsJson(analysis.getResumeTips()))
+                        .learningRecommendations(parseSkillsJson(analysis.getLearningRecommendations()))
+                        .analyzedAt(analysis.getCreatedAt())
+                        .analysisDuration("N/A") // Not available for old data
+                        .build();
+            }).collect(Collectors.toList());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     private String getMatchLevel(double score) {
@@ -97,8 +184,34 @@ public class AnalysisController {
     }
 
     @GetMapping("/trends")
-    public List<AnalysisTrendDTO> getAnalysisTrends(@AuthenticationPrincipal User user) {
-        return analysisService.getAnalysisTrends(user);
+    public ResponseEntity<List<AnalysisTrendDTO>> getAnalysisTrends(HttpServletRequest httpRequest) {
+        try {
+            // Extract JWT token and validate
+            String authHeader = httpRequest.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            String token = authHeader.substring(7);
+            
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            String email = jwtUtil.extractUsername(token);
+            
+            // Get user by email
+            User user = userService.loadUserByEmail(email);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            List<AnalysisTrendDTO> result = analysisService.getAnalysisTrends(user);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @Data

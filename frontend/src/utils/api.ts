@@ -1,5 +1,5 @@
 // API configuration and helpers
-const API_BASE_URL = ""; // Use proxy instead of direct localhost:8080
+const API_BASE_URL = "http://localhost:8080"; // Backend URL
 
 // Helper to get auth headers
 export const getAuthHeaders = (): Record<string, string> => {

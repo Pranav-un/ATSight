@@ -1,13 +1,15 @@
 import { motion } from "framer-motion";
 import {
   FiUpload,
-  FiUser,
   FiMail,
   FiCalendar,
   FiTrash2,
   FiDownload,
   FiPlus,
+  FiMapPin,
+  FiBriefcase,
 } from "react-icons/fi";
+import ProfilePicture from "./ProfilePicture";
 
 interface Resume {
   id: number;
@@ -19,6 +21,11 @@ interface ProfileSectionProps {
   user: {
     email: string;
     role: string;
+    firstName?: string;
+    lastName?: string;
+    profilePicture?: string;
+    jobTitle?: string;
+    location?: string;
   };
   resumes: Resume[];
   onUploadResume: (file: File) => Promise<boolean>;
@@ -46,16 +53,36 @@ export default function ProfileSection({
         className="bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl p-6 text-white"
       >
         <div className="flex items-center">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mr-4">
-            <FiUser className="w-8 h-8" />
+          <div className="mr-4">
+            <ProfilePicture
+              src={user.profilePicture}
+              size="lg"
+              alt={`${user.firstName} ${user.lastName}`}
+              className="border-4 border-white/20"
+              fallbackBg="from-white/20 to-white/30"
+            />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Welcome back!</h2>
+            <h2 className="text-2xl font-bold">
+              Welcome back{user.firstName ? `, ${user.firstName}` : ""}!
+            </h2>
             <div className="flex items-center mt-1">
               <FiMail className="w-4 h-4 mr-2 opacity-80" />
               <span className="opacity-90">{user.email}</span>
             </div>
-            <div className="mt-1">
+            {user.jobTitle && (
+              <div className="flex items-center mt-1 opacity-90">
+                <FiBriefcase className="w-4 h-4 mr-2 opacity-80" />
+                <span>{user.jobTitle}</span>
+              </div>
+            )}
+            {user.location && (
+              <div className="flex items-center mt-1 opacity-90">
+                <FiMapPin className="w-4 h-4 mr-2 opacity-80" />
+                <span>{user.location}</span>
+              </div>
+            )}
+            <div className="mt-2">
               <span className="inline-block bg-white/20 px-2 py-1 rounded-full text-sm">
                 {user.role}
               </span>

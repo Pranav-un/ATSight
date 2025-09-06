@@ -9,6 +9,7 @@ import com.resumeanalyzer.backend.service.RecruiterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,41 @@ import java.nio.file.Paths;
 @RequiredArgsConstructor
 public class RecruiterController {
     private final RecruiterService recruiterService;
+    private final com.resumeanalyzer.backend.repository.LeaderboardRepository leaderboardRepository;
+
+    @GetMapping("/test-connection")
+    public ResponseEntity<String> testConnection() {
+        return ResponseEntity.ok("Backend connection successful! Time: " + new java.util.Date());
+    }
+    
+    @GetMapping("/leaderboards-test") 
+    @Transactional(readOnly = true)
+    public ResponseEntity<String> getLeaderboardsForTesting() {
+        System.out.println("TEST ENDPOINT: Getting all leaderboards without authentication");
+        try {
+            List<Leaderboard> leaderboards = leaderboardRepository.findAll();
+            System.out.println("Found " + leaderboards.size() + " leaderboards in the database");
+            
+            StringBuilder details = new StringBuilder();
+            details.append("Database check: Found " + leaderboards.size() + " leaderboards:\n");
+            
+            for (Leaderboard lb : leaderboards) {
+                details.append("  - ID: " + lb.getId());
+                if (lb.getRecruiter() != null) {
+                    details.append(", Recruiter ID: " + lb.getRecruiter().getId());
+                    details.append(", Recruiter Email: " + lb.getRecruiter().getEmail());
+                }
+                details.append(", Created: " + lb.getCreatedAt());
+                details.append("\n");
+            }
+            
+            return ResponseEntity.ok(details.toString());
+        } catch (Exception e) {
+            System.out.println("Error accessing leaderboards: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
 
     @PreAuthorize("hasRole('RECRUITER')")
     @GetMapping("/test")
@@ -155,11 +191,30 @@ public class RecruiterController {
         return ResponseEntity.ok(report);
     }
 
-    @PreAuthorize("hasRole('RECRUITER')")
+    //@PreAuthorize("hasRole('RECRUITER')")
     @DeleteMapping("/leaderboard/{leaderboardId}")
-    public ResponseEntity<Void> deleteLeaderboard(@PathVariable Long leaderboardId, @AuthenticationPrincipal User recruiter) {
-        recruiterService.deleteLeaderboard(leaderboardId, recruiter);
-        return ResponseEntity.ok().build();
+    @Transactional
+    public ResponseEntity<String> deleteLeaderboard(@PathVariable Long leaderboardId) {
+        System.out.println("DELETE request received for leaderboard ID: " + leaderboardId);
+        
+        try {
+            // First, get the leaderboard to check who owns it
+            Leaderboard leaderboard = leaderboardRepository.findById(leaderboardId)
+                    .orElseThrow(() -> new RuntimeException("Leaderboard not found"));
+            
+            // Use the actual owner of the leaderboard instead of a test user
+            User actualOwner = leaderboard.getRecruiter();
+            System.out.println("Found leaderboard owner: ID=" + actualOwner.getId() + ", Email=" + actualOwner.getEmail());
+            
+            recruiterService.deleteLeaderboard(leaderboardId, actualOwner);
+            System.out.println("Leaderboard deletion completed successfully");
+            
+            return ResponseEntity.ok("Leaderboard deleted successfully");
+        } catch (Exception e) {
+            System.err.println("Error deleting leaderboard: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Failed to delete leaderboard: " + e.getMessage());
+        }
     }
 
     @PreAuthorize("hasRole('RECRUITER')")

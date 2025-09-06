@@ -240,26 +240,80 @@ public class FastSkillExtractionServiceImpl implements SkillExtractionService {
 
     @Override
     public double computeSimilarity(String text1, String text2) {
-        // Fast local similarity computation using Jaccard similarity
+        // Enhanced similarity computation for resume-JD matching
         if (text1 == null || text2 == null) {
             return 0.0;
         }
         
-        Set<String> words1 = Arrays.stream(text1.toLowerCase().split("\\s+"))
+        // Normalize and clean text
+        String cleanText1 = text1.toLowerCase().replaceAll("[^a-zA-Z0-9\\s]", " ");
+        String cleanText2 = text2.toLowerCase().replaceAll("[^a-zA-Z0-9\\s]", " ");
+        
+        Set<String> words1 = Arrays.stream(cleanText1.split("\\s+"))
             .filter(word -> word.length() > 2 && !COMMON_WORDS.contains(word))
             .collect(Collectors.toSet());
             
-        Set<String> words2 = Arrays.stream(text2.toLowerCase().split("\\s+"))
+        Set<String> words2 = Arrays.stream(cleanText2.split("\\s+"))
             .filter(word -> word.length() > 2 && !COMMON_WORDS.contains(word))
             .collect(Collectors.toSet());
         
+        // Standard Jaccard similarity
         Set<String> intersection = new HashSet<>(words1);
         intersection.retainAll(words2);
         
         Set<String> union = new HashSet<>(words1);
         union.addAll(words2);
         
-        return union.isEmpty() ? 0.0 : (double) intersection.size() / union.size();
+        double jaccardSimilarity = union.isEmpty() ? 0.0 : (double) intersection.size() / union.size();
+        
+        // Enhanced scoring for resume-JD matching
+        // Check for important matching terms that indicate strong fit
+        long importantMatches = intersection.stream()
+            .mapToLong(word -> {
+                // Give higher weight to technical terms, skills, and industry keywords
+                if (isImportantTerm(word)) return 3;
+                if (word.length() > 6) return 2; // Longer words are often more specific/important
+                return 1;
+            }).sum();
+            
+        long totalImportantTerms = words2.stream()
+            .mapToLong(word -> {
+                if (isImportantTerm(word)) return 3;
+                if (word.length() > 6) return 2;
+                return 1;
+            }).sum();
+            
+        double weightedSimilarity = totalImportantTerms > 0 ? (double) importantMatches / totalImportantTerms : 0.0;
+        
+        // Return the better of the two similarity scores, but cap semantic similarity impact
+        // This prevents semantic similarity from dominating when skill match is perfect
+        double finalSimilarity = Math.max(jaccardSimilarity, weightedSimilarity);
+        return Math.min(finalSimilarity, 0.9); // Cap at 90% to ensure skill match has more impact
+    }
+    
+    private boolean isImportantTerm(String word) {
+        // Check if word is an important technical or professional term
+        String lowerWord = word.toLowerCase();
+        
+        // Programming languages and frameworks
+        if (PROGRAMMING_LANGUAGES.contains(lowerWord) || 
+            FRAMEWORKS_LIBRARIES.contains(lowerWord) || 
+            DATABASES.contains(lowerWord) || 
+            CLOUD_TECHNOLOGIES.contains(lowerWord) || 
+            DATA_SCIENCE_ML.contains(lowerWord)) {
+            return true;
+        }
+        
+        // Important professional terms
+        Set<String> professionalTerms = Set.of(
+            "experience", "project", "development", "management", "leadership", 
+            "engineering", "architect", "senior", "junior", "lead", "team",
+            "agile", "scrum", "devops", "fullstack", "frontend", "backend",
+            "software", "application", "system", "platform", "infrastructure",
+            "design", "implementation", "optimization", "performance", "security"
+        );
+        
+        return professionalTerms.contains(lowerWord) || lowerWord.length() > 8;
     }
 
     @Override

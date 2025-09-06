@@ -6,6 +6,7 @@ import com.resumeanalyzer.backend.entity.Leaderboard;
 import com.resumeanalyzer.backend.entity.LeaderboardEntry;
 import com.resumeanalyzer.backend.dto.CandidateAnalysisDTO;
 import com.resumeanalyzer.backend.dto.CandidateReportDTO;
+import com.resumeanalyzer.backend.dto.LeaderboardSummaryDTO;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;

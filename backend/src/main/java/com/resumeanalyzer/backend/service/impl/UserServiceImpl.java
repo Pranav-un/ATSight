@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
             throw new AuthException("Invalid email or password");
         }
         String token = jwtUtil.generateToken(user);
-        return new AuthResponse(token, user.getRole().name());
+        return new AuthResponse(token, user);
     }
 
     @Override
@@ -56,5 +56,10 @@ public class UserServiceImpl implements UserService {
             throw new AuthException("User account is deactivated. Please contact support.");
         }
         return user;
+    }
+    
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 } 
