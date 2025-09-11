@@ -21,6 +21,14 @@ import {
   FiSave,
   FiCamera,
   FiCalendar,
+  FiMessageSquare,
+  FiCheckCircle,
+  FiBriefcase,
+  FiTrendingUp,
+  FiAward,
+  FiStar,
+  FiCode,
+  FiActivity,
 } from "react-icons/fi";
 import { apiCall, isAuthenticated, uploadFile } from "../utils/api";
 import CustomLoader from "../components/CustomLoader";
@@ -453,16 +461,94 @@ const RecruiterDashboard = () => {
   };
 
   const updateNotes = async (entryId: number, notes: string) => {
-    try {
-      await apiCall(`/api/recruiter/leaderboard/entry/${entryId}/notes`, {
-        method: "PATCH",
-        body: JSON.stringify(notes),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+    console.log("🔄 Starting updateNotes function...");
 
-      // Update leaderboard entries
+    try {
+      console.log("=== FRONTEND UPDATE NOTES DEBUG ===");
+      console.log("Entry ID:", entryId);
+      console.log("Notes to save:", notes);
+      console.log("Notes length:", notes.length);
+
+      // Get token manually to avoid content-type conflicts
+      const token = localStorage.getItem("token");
+      console.log("Token exists:", !!token);
+
+      const headers: Record<string, string> = {
+        "Content-Type": "text/plain",
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+        console.log("Authorization header added");
+      }
+
+      console.log("Request headers:", headers);
+
+      const url = `http://localhost:8080/api/recruiter/leaderboard/entry/${entryId}/notes`;
+      console.log("Making request to:", url);
+
+      // Make direct fetch call to avoid apiCall header conflicts
+      let response;
+      try {
+        console.log("🚀 Sending fetch request...");
+        response = await fetch(url, {
+          method: "PATCH",
+          headers: headers,
+          body: notes,
+        });
+        console.log("✅ Fetch request completed");
+      } catch (networkError) {
+        console.error("❌ Network error during fetch:", networkError);
+        // DON'T show alert for network errors if notes actually save
+        return;
+      }
+
+      console.log("Response status:", response.status);
+      console.log("Response OK:", response.ok);
+      console.log(
+        "Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
+
+      // Check if response is successful
+      if (!response.ok) {
+        let errorText = "Unknown error";
+        try {
+          errorText = await response.text();
+        } catch (readError) {
+          console.error("Could not read error response:", readError);
+        }
+        console.error("❌ Server error response:", errorText);
+        alert(`Server error: ${response.status} - ${errorText}`);
+        return;
+      }
+
+      // Try to parse the response
+      try {
+        const responseText = await response.text();
+        console.log("Raw response text:", responseText);
+
+        if (responseText) {
+          const responseData = JSON.parse(responseText);
+          console.log("✅ Parsed response:", responseData);
+
+          // Check if the response indicates success
+          if (responseData.success) {
+            console.log("✅ Backend confirmed notes were saved successfully");
+          }
+        } else {
+          console.log("⚠️ Empty response body (but status was OK)");
+        }
+      } catch (parseError) {
+        console.error(
+          "⚠️ Error parsing response (but treating as success):",
+          parseError
+        );
+      }
+
+      console.log("✅ Notes API call successful!");
+
+      // Update frontend state
       if (selectedLeaderboard) {
         const updatedEntries = selectedLeaderboard.entries.map((entry) =>
           entry.id === entryId ? { ...entry, notes } : entry
@@ -471,17 +557,17 @@ const RecruiterDashboard = () => {
           ...selectedLeaderboard,
           entries: updatedEntries,
         });
+        console.log("✅ Updated leaderboard state");
       }
 
-      // Update selected candidate if it's the same one
       if (selectedCandidate && selectedCandidate.id === entryId) {
         setSelectedCandidate({
           ...selectedCandidate,
           notes,
         });
+        console.log("✅ Updated selected candidate state");
       }
 
-      // Update candidate report if it exists
       if (
         candidateReport &&
         selectedCandidate &&
@@ -491,12 +577,153 @@ const RecruiterDashboard = () => {
           ...candidateReport,
           notes,
         });
+        console.log("✅ Updated candidate report state");
       }
+
+      console.log("🎉 Notes update completed successfully!");
     } catch (error) {
-      console.error("Error updating notes:", error);
-      // Show user-friendly error message
-      alert("Failed to update notes. Please try again.");
+      console.error("❌ Unexpected error in updateNotes function:", error);
+      console.error("Error details:", {
+        type: typeof error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      // Only show alert for unexpected errors
+      alert(
+        "An unexpected error occurred while updating notes. Please try again."
+      );
     }
+  };
+
+  const generateInterviewQuestions = (
+    candidateReport: CandidateReport,
+    selectedCandidate: LeaderboardEntry
+  ) => {
+    const questions = [];
+    const validationAreas = [];
+
+    // Extract candidate's top skills
+    const candidateSkills = candidateReport.allSkills || [];
+    const topSkills = candidateSkills.slice(0, 3);
+    const matchedSkills = candidateReport.matchedSkills || [];
+
+    // Extract missing/required skills
+    const missingSkills = candidateReport.missingSkills || [];
+
+    // Generate skill-specific questions based on matched skills
+    if (matchedSkills.length > 0) {
+      questions.push(
+        `• Describe a complex project where you used ${matchedSkills
+          .slice(0, 2)
+          .join(" and ")}`
+      );
+      questions.push(
+        `• How do you stay current with ${matchedSkills[0]} best practices and new developments?`
+      );
+    } else if (topSkills.length > 0) {
+      questions.push(
+        `• Describe your experience with ${topSkills.slice(0, 2).join(" and ")}`
+      );
+    }
+
+    // Generate questions based on missing skills
+    if (missingSkills.length > 0) {
+      questions.push(
+        `• Experience with ${missingSkills
+          .slice(0, 2)
+          .join(" or ")}: any exposure or learning plans?`
+      );
+      validationAreas.push(
+        `Willingness to learn ${missingSkills[0]} and adaptability to new technologies`
+      );
+    }
+
+    // Generate questions based on experience level
+    const experienceScore = candidateReport.experienceScore || 0;
+    const experienceLevel = candidateReport.experienceLevel || "";
+
+    if (
+      experienceLevel.toLowerCase().includes("senior") ||
+      experienceScore > 0.8
+    ) {
+      questions.push(
+        "• Describe your leadership style and team mentoring experience"
+      );
+      questions.push(
+        "• How do you approach architectural decisions and technical debt?"
+      );
+      validationAreas.push(
+        "Strategic thinking and senior-level decision making"
+      );
+    } else if (
+      experienceLevel.toLowerCase().includes("mid") ||
+      experienceScore > 0.5
+    ) {
+      questions.push(
+        "• Walk through your most challenging technical problem and solution"
+      );
+      questions.push(
+        "• How do you handle code reviews and collaborate with seniors?"
+      );
+      validationAreas.push("Growth potential and problem-solving depth");
+    } else {
+      questions.push("• Describe your learning approach for new technologies");
+      questions.push("• How do you handle feedback and mentorship?");
+      validationAreas.push("Learning agility and foundational knowledge");
+    }
+
+    // Generate questions based on projects
+    if (candidateReport.projects && candidateReport.projects.length > 0) {
+      const projectTypes = candidateReport.projects.slice(0, 2);
+      questions.push(
+        `• Tell me about your role in: ${projectTypes.join(" or ")}`
+      );
+    }
+
+    // Generate questions based on hackathons/competitions
+    if (candidateReport.hackathons && candidateReport.hackathons.length > 0) {
+      questions.push(
+        "• Describe your experience in hackathons and competitive programming"
+      );
+      validationAreas.push("Innovation mindset and rapid prototyping skills");
+    }
+
+    // Generate questions based on overall match score
+    const matchScore = selectedCandidate.matchScore || 0;
+    if (matchScore > 0.8) {
+      questions.push(
+        "• Where do you see this role fitting into your career goals?"
+      );
+      validationAreas.push("Cultural fit and long-term commitment");
+    } else if (matchScore < 0.6) {
+      questions.push(
+        "• What excites you most about this role and our tech stack?"
+      );
+      validationAreas.push(
+        "Genuine interest and motivation to bridge skill gaps"
+      );
+    }
+
+    // Add behavioral questions based on weaknesses
+    if (candidateReport.candidateWeakness) {
+      questions.push(
+        "• Describe a time you overcame a significant technical challenge"
+      );
+      validationAreas.push(candidateReport.candidateWeakness);
+    }
+
+    // Always include some core behavioral questions
+    if (questions.length < 4) {
+      questions.push(
+        "• Describe a time you had to learn something completely new under pressure"
+      );
+    }
+
+    return {
+      questions: questions.slice(0, 5), // Limit to 5 key questions
+      validationAreas: validationAreas.slice(0, 2), // Limit to 2 key areas
+    };
   };
 
   const toggleFavorite = async (entryId: number) => {
@@ -871,19 +1098,369 @@ const RecruiterDashboard = () => {
       case "candidateDetail":
         return renderCandidateDetail();
       case "reports":
-        return (
-          <div className="p-8">
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-              <FiFileText className="text-4xl text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Reports Coming Soon
-              </h2>
-              <p className="text-gray-500">
-                Detailed analytics and reporting features are in development.
-              </p>
+        const renderReports = () => {
+          // Ensure leaderboards is an array
+          const safeLeaderboards = leaderboards || [];
+
+          // Show empty state if no data
+          if (safeLeaderboards.length === 0) {
+            return (
+              <div className="p-8">
+                <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+                  <FiBarChart className="text-4xl text-gray-400 mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                    No Data Available
+                  </h2>
+                  <p className="text-gray-500 mb-4">
+                    Upload some resumes and create leaderboards to see analytics
+                    here.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab("home")}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Get Started
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          // Calculate analytics from available data
+          const totalCandidates = safeLeaderboards.reduce(
+            (sum, lb) => sum + (lb.entries?.length || 0),
+            0
+          );
+          const totalPositions = safeLeaderboards.length;
+
+          // Calculate average scores across all candidates
+          const allCandidates = safeLeaderboards.flatMap(
+            (lb) => lb.entries || []
+          );
+          const avgMatchScore =
+            allCandidates.length > 0
+              ? (allCandidates.reduce(
+                  (sum, c) => sum + (c.matchScore || 0),
+                  0
+                ) /
+                  allCandidates.length) *
+                100
+              : 0;
+
+          // Find top performers based on matchScore
+          const topCandidates = allCandidates
+            .filter((c) => c.matchScore !== null)
+            .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+            .slice(0, 5);
+
+          // Skills analysis from skills field
+          const skillFrequency: { [key: string]: number } = {};
+          allCandidates.forEach((candidate) => {
+            if (candidate.skills) {
+              // Split skills by common delimiters
+              const skillsArray = candidate.skills
+                .split(/[,;|]/)
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0);
+              skillsArray.forEach((skill) => {
+                const trimmedSkill = skill.trim();
+                if (trimmedSkill) {
+                  skillFrequency[trimmedSkill] =
+                    (skillFrequency[trimmedSkill] || 0) + 1;
+                }
+              });
+            }
+          });
+
+          const topSkills = Object.entries(skillFrequency)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 8);
+
+          // Experience analysis from experience field
+          const experienceData: { [key: string]: number } = {};
+          allCandidates.forEach((candidate) => {
+            if (candidate.experience) {
+              // Try to extract experience level info
+              const expText = candidate.experience.toLowerCase();
+              let level = "Unknown";
+
+              if (
+                expText.includes("senior") ||
+                expText.includes("lead") ||
+                expText.includes("principal")
+              ) {
+                level = "Senior Level";
+              } else if (
+                expText.includes("mid") ||
+                expText.includes("intermediate") ||
+                /\d+.*year/.test(expText)
+              ) {
+                level = "Mid Level";
+              } else if (
+                expText.includes("junior") ||
+                expText.includes("entry") ||
+                expText.includes("intern")
+              ) {
+                level = "Junior Level";
+              } else if (expText.trim()) {
+                level = "Professional";
+              }
+
+              experienceData[level] = (experienceData[level] || 0) + 1;
+            } else {
+              experienceData["Unknown"] = (experienceData["Unknown"] || 0) + 1;
+            }
+          });
+
+          return (
+            <div className="p-8 space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Recruitment Analytics
+                  </h1>
+                  <p className="text-gray-600">
+                    Insights from your candidate pipeline
+                  </p>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Updated: {new Date().toLocaleDateString()}
+                </div>
+              </div>
+
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-700">
+                        Total Candidates
+                      </p>
+                      <p className="text-2xl font-bold text-blue-900">
+                        {totalCandidates}
+                      </p>
+                    </div>
+                    <FiUsers className="text-2xl text-blue-600" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-700">
+                        Open Positions
+                      </p>
+                      <p className="text-2xl font-bold text-green-900">
+                        {totalPositions}
+                      </p>
+                    </div>
+                    <FiBriefcase className="text-2xl text-green-600" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-purple-700">
+                        Avg Match Score
+                      </p>
+                      <p className="text-2xl font-bold text-purple-900">
+                        {avgMatchScore.toFixed(1)}%
+                      </p>
+                    </div>
+                    <FiTrendingUp className="text-2xl text-purple-600" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-orange-700">
+                        Top Performers
+                      </p>
+                      <p className="text-2xl font-bold text-orange-900">
+                        {topCandidates.length}
+                      </p>
+                    </div>
+                    <FiAward className="text-2xl text-orange-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Charts and Detailed Analytics */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Top Performers */}
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FiStar className="mr-2 text-yellow-500" />
+                    Top Performers
+                  </h2>
+                  <div className="space-y-3">
+                    {topCandidates.map((candidate, index) => (
+                      <div
+                        key={candidate.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {candidate.candidateName}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              #{candidate.rankPosition}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-green-600">
+                            {((candidate.matchScore || 0) * 100).toFixed(1)}%
+                          </p>
+                          <p className="text-xs text-gray-500">Match Score</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Skills Distribution */}
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FiCode className="mr-2 text-blue-500" />
+                    Most In-Demand Skills
+                  </h2>
+                  <div className="space-y-3">
+                    {topSkills.length > 0 ? (
+                      topSkills.map(([skill, count]) => (
+                        <div
+                          key={skill}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="text-sm font-medium text-gray-700">
+                            {skill}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
+                                style={{
+                                  width: `${
+                                    (count /
+                                      Math.max(
+                                        ...topSkills.map(([, c]) => c),
+                                        1
+                                      )) *
+                                    100
+                                  }%`,
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-sm text-gray-600 w-6">
+                              {count}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-gray-500">
+                          No skills data available yet
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Experience Level Distribution */}
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FiBarChart className="mr-2 text-green-500" />
+                    Experience Distribution
+                  </h2>
+                  <div className="space-y-3">
+                    {Object.entries(experienceData).map(([level, count]) => {
+                      const countNum = count as number;
+                      return (
+                        <div
+                          key={level}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="text-sm font-medium text-gray-700">
+                            {level}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-gradient-to-r from-green-500 to-teal-500 h-2 rounded-full"
+                                style={{
+                                  width: `${
+                                    totalCandidates > 0
+                                      ? (countNum / totalCandidates) * 100
+                                      : 0
+                                  }%`,
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-sm text-gray-600 w-8">
+                              {countNum}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FiActivity className="mr-2 text-purple-500" />
+                    Pipeline Insights
+                  </h2>
+                  <div className="space-y-4">
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <p className="text-sm font-medium text-blue-800">
+                        Quality Pipeline
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        {
+                          allCandidates.filter((c) => (c.matchScore || 0) > 0.7)
+                            .length
+                        }{" "}
+                        high-scoring candidates (70%+ match)
+                      </p>
+                    </div>
+                    <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                      <p className="text-sm font-medium text-yellow-800">
+                        Skills Analysis
+                      </p>
+                      <p className="text-xs text-yellow-600 mt-1">
+                        {topSkills.length > 0
+                          ? `${topSkills[0][0]} is the most common skill`
+                          : "No skills data available"}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-green-50 rounded-lg border border-green-100">
+                      <p className="text-sm font-medium text-green-800">
+                        Hiring Recommendation
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">
+                        {topCandidates.length > 0
+                          ? `${topCandidates[0]?.candidateName} shows highest potential`
+                          : "No candidates evaluated yet"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        );
+          );
+        };
+
+        return renderReports();
       case "profile":
         return renderProfile();
       default:
@@ -1815,92 +2392,6 @@ const RecruiterDashboard = () => {
     );
   };
 
-  const renderReports = () => (
-    <div className="p-8">
-      <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl shadow-lg p-8 text-white relative overflow-hidden mb-8">
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold mb-2">Reports & Analytics</h1>
-          <p className="text-teal-100">
-            Export and analyze your recruitment data
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Export Options
-          </h3>
-          <div className="space-y-3">
-            {leaderboards.map((leaderboard) => (
-              <div
-                key={leaderboard.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-              >
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {leaderboard.jobDescription?.title ||
-                      `Leaderboard #${leaderboard.id}`}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {leaderboard.entries?.length || 0} candidates
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => downloadLeaderboardCSV(leaderboard.id)}
-                    className="px-3 py-2 bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 transition-all font-medium flex items-center space-x-1"
-                  >
-                    <FiDownload className="text-sm" />
-                    <span>CSV</span>
-                  </button>
-                  <button
-                    onClick={() => deleteLeaderboard(leaderboard.id)}
-                    className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all font-medium flex items-center space-x-1"
-                  >
-                    <FiTrash2 className="text-sm" />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Total Candidates Reviewed</span>
-              <span className="font-bold text-gray-900">
-                {leaderboards.reduce(
-                  (acc, lb) => acc + (lb.entries?.length || 0),
-                  0
-                )}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Favorites Marked</span>
-              <span className="font-bold text-gray-900">
-                {leaderboards.reduce(
-                  (acc, lb) =>
-                    acc + (lb.entries?.filter((e) => e.isFavorite).length || 0),
-                  0
-                )}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Active Leaderboards</span>
-              <span className="font-bold text-gray-900">
-                {leaderboards.length}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   const renderProfile = () => {
     const handleProfilePictureChange = (
       e: React.ChangeEvent<HTMLInputElement>
@@ -2690,157 +3181,250 @@ const RecruiterDashboard = () => {
 
         {candidateReport && (
           <div className="space-y-8">
-            {/* AI Analysis Section - Move to top as primary focus */}
+            {/* Enhanced Recruiter Insights Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Key Strengths Card - Enhanced */}
+              {/* Technical Profile & Skills Strengths */}
               <div className="relative overflow-hidden bg-white rounded-2xl shadow-2xl border border-gray-100 transform hover:scale-105 transition-all duration-300">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-green-600"></div>
                 <div className="p-8">
                   <div className="flex items-center mb-6">
                     <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                      <FiTarget className="text-white text-xl" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">
-                        Key Strengths
+                        Technical Strengths
                       </h3>
                       <p className="text-emerald-600 font-medium text-sm">
-                        AI-Identified Advantages
+                        Skills & Experience Profile
                       </p>
                     </div>
                   </div>
                   <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl p-6 border border-emerald-200 shadow-inner">
-                    <div className="space-y-3">
-                      {candidateReport.candidateStrength
-                        .split(".")
-                        .filter((point) => point.trim())
-                        .slice(0, 3)
-                        .map((point, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start space-x-2"
-                          >
-                            <span className="text-emerald-500 mt-1 text-sm">
-                              •
-                            </span>
-                            <span className="text-gray-800 text-sm leading-relaxed font-medium">
-                              {point.trim()}
-                            </span>
-                          </div>
-                        ))}
+                    <div className="space-y-4">
+                      {/* Skill Strength */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">
+                          Technical Skills
+                        </span>
+                        <span className="text-lg font-bold text-emerald-700">
+                          {Math.round(candidateReport.skillsScore * 100)}%
+                        </span>
+                      </div>
+
+                      {/* Top Skills Display */}
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Top Skills:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {candidateReport.allSkills
+                            .slice(0, 4)
+                            .map((skill, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Experience Highlight */}
+                      <div className="pt-2 border-t border-emerald-200">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-semibold">
+                            {candidateReport.experienceLevel}
+                          </span>{" "}
+                          level with{" "}
+                          <span className="font-semibold">
+                            {candidateReport.totalYearsExperience || "N/A"}{" "}
+                            years
+                          </span>{" "}
+                          experience
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {candidateReport.candidateStrength ||
+                            `Strong ${
+                              candidateReport.topSkillCategory || "technical"
+                            } background with ${
+                              candidateReport.projectCount || 0
+                            } projects`}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-4 flex items-center text-emerald-600">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full mr-3"></div>
                     <span className="text-xs font-semibold uppercase tracking-wide">
-                      Competitive Edge
+                      Key Strengths
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Development Areas Card - Enhanced */}
+              {/* Interview Focus Areas */}
               <div className="relative overflow-hidden bg-white rounded-2xl shadow-2xl border border-gray-100 transform hover:scale-105 transition-all duration-300">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-600"></div>
                 <div className="p-8">
                   <div className="flex items-center mb-6">
                     <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-700 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                      <FiMessageSquare className="text-white text-xl" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">
-                        Development Areas
+                        Interview Focus
                       </h3>
                       <p className="text-amber-600 font-medium text-sm">
-                        AI-Suggested Improvements
+                        Key Areas to Explore
                       </p>
                     </div>
                   </div>
                   <div className="bg-gradient-to-br from-amber-50 to-orange-100 rounded-xl p-6 border border-amber-200 shadow-inner">
                     <div className="space-y-3">
-                      {candidateReport.candidateWeakness
-                        .split(".")
-                        .filter((point) => point.trim())
-                        .slice(0, 3)
-                        .map((point, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start space-x-2"
-                          >
-                            <span className="text-amber-500 mt-1 text-sm">
-                              •
-                            </span>
-                            <span className="text-gray-800 text-sm leading-relaxed font-medium">
-                              {point.trim()}
-                            </span>
-                          </div>
-                        ))}
+                      {(() => {
+                        const interviewData = generateInterviewQuestions(
+                          candidateReport,
+                          selectedCandidate
+                        );
+                        return (
+                          <>
+                            {/* Dynamic Questions */}
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 mb-2">
+                                Key Questions:
+                              </p>
+                              <ul className="text-sm text-gray-600 space-y-1">
+                                {interviewData.questions.map(
+                                  (question, index) => (
+                                    <li key={index}>{question}</li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+
+                            {/* Dynamic Validation Areas */}
+                            <div className="pt-2 border-t border-amber-200">
+                              <p className="text-sm font-medium text-gray-700 mb-1">
+                                Validate:
+                              </p>
+                              <div className="text-sm text-gray-700 space-y-1">
+                                {interviewData.validationAreas.length > 0 ? (
+                                  interviewData.validationAreas.map(
+                                    (area, index) => <p key={index}>• {area}</p>
+                                  )
+                                ) : (
+                                  <p>
+                                    • Overall technical competency and cultural
+                                    fit
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="mt-4 flex items-center text-amber-600">
                     <div className="w-2 h-2 bg-amber-500 rounded-full mr-3"></div>
                     <span className="text-xs font-semibold uppercase tracking-wide">
-                      Growth Focus
+                      Interview Guide
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Role Fit Assessment Card - Enhanced */}
+              {/* Hiring Decision Support */}
               <div className="relative overflow-hidden bg-white rounded-2xl shadow-2xl border border-gray-100 transform hover:scale-105 transition-all duration-300">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-cyan-600"></div>
                 <div className="p-8">
                   <div className="flex items-center mb-6">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-700 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                      <FiCheckCircle className="text-white text-xl" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">
-                        Role Fit Assessment
+                        Hiring Assessment
                       </h3>
                       <p className="text-blue-600 font-medium text-sm">
-                        AI-Powered Analysis
+                        Decision Support
                       </p>
                     </div>
                   </div>
                   <div className="bg-gradient-to-br from-blue-50 to-cyan-100 rounded-xl p-6 border border-blue-200 shadow-inner">
                     <div className="space-y-3">
-                      {(
-                        candidateReport.fitAssessment ||
-                        candidateReport.hiringRecommendation ||
-                        "Good potential for the role"
-                      )
-                        .split(".")
-                        .filter((point) => point.trim())
-                        .slice(0, 2)
-                        .map((point, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start space-x-2"
-                          >
-                            <span className="text-blue-500 mt-1 text-sm">
-                              •
+                      {/* Overall Assessment */}
+                      <div className="text-center">
+                        <div
+                          className="w-16 h-16 mx-auto mb-2 rounded-full flex items-center justify-center text-2xl font-bold"
+                          style={{
+                            backgroundColor:
+                              candidateReport.overallScore >= 0.8
+                                ? "#10B981"
+                                : candidateReport.overallScore >= 0.6
+                                ? "#F59E0B"
+                                : "#EF4444",
+                            color: "white",
+                          }}
+                        >
+                          {Math.round(candidateReport.overallScore * 100)}
+                        </div>
+                        <p className="text-sm font-medium text-gray-700">
+                          Overall Match
+                        </p>
+                      </div>
+
+                      {/* Recommendation */}
+                      <div className="text-center">
+                        <p className="text-lg font-semibold text-gray-800 mb-2">
+                          {candidateReport.hiringRecommendation ||
+                            (candidateReport.overallScore >= 0.8
+                              ? "🟢 HIGHLY RECOMMENDED"
+                              : candidateReport.overallScore >= 0.6
+                              ? "🟡 PROCEED WITH INTERVIEW"
+                              : candidateReport.overallScore >= 0.4
+                              ? "🟠 REQUIRES EVALUATION"
+                              : "🔴 NOT RECOMMENDED")}
+                        </p>
+                      </div>
+
+                      {/* JD Match if available */}
+                      {candidateReport.jdMatchPercentage && (
+                        <div className="pt-2 border-t border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">
+                              Job Description Match
                             </span>
-                            <span className="text-gray-800 text-sm leading-relaxed font-medium">
-                              {point.trim()}
+                            <span className="text-sm font-semibold text-blue-700">
+                              {Math.round(candidateReport.jdMatchPercentage)}%
                             </span>
                           </div>
-                        ))}
+                        </div>
+                      )}
+
+                      {/* Quick Decision Factors */}
+                      <div className="pt-2 border-t border-blue-200">
+                        <p className="text-xs text-gray-600">
+                          {candidateReport.fitAssessment ||
+                            `Based on ${
+                              candidateReport.allSkills.length
+                            } skills, ${
+                              candidateReport.experienceLevel
+                            } experience, and ${
+                              candidateReport.projectCount || 0
+                            } projects.`}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center text-blue-600">
                       <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
                       <span className="text-xs font-semibold uppercase tracking-wide">
-                        Match Score
+                        Decision Ready
                       </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center border-2 border-blue-300">
-                        <span className="text-blue-700 font-bold text-sm">
-                          {Math.round(candidateReport.overallScore * 100)}%
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -3144,101 +3728,6 @@ const RecruiterDashboard = () => {
               </div>
             </div>
 
-            {/* Education & Certifications */}
-            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <span className="text-2xl mr-3">🎓</span>
-                Education & Qualifications
-              </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-lg font-semibold text-gray-700">
-                      Education Score
-                    </span>
-                    <span className="text-2xl font-bold text-gray-900">
-                      {Math.round(candidateReport.educationScore * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-4 mb-6">
-                    <div
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-4 rounded-full transition-all"
-                      style={{
-                        width: `${candidateReport.educationScore * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-
-                  <div>
-                    <h5 className="text-sm font-semibold text-gray-700 mb-3">
-                      Education
-                    </h5>
-                    <div className="space-y-2">
-                      {candidateReport.education.map((edu, index) => (
-                        <div
-                          key={index}
-                          className="bg-purple-50 rounded-lg px-4 py-2 border border-purple-100"
-                        >
-                          <span className="text-gray-800 text-sm font-medium">
-                            {edu}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h5 className="text-lg font-semibold text-gray-700 mb-4">
-                    Additional Qualifications
-                  </h5>
-
-                  {candidateReport.certifications &&
-                    candidateReport.certifications.length > 0 && (
-                      <div className="mb-4">
-                        <h6 className="text-sm font-medium text-gray-600 mb-2">
-                          Certifications
-                        </h6>
-                        <div className="space-y-1">
-                          {candidateReport.certifications.map((cert, index) => (
-                            <span
-                              key={index}
-                              className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full mr-2 mb-2"
-                            >
-                              {cert}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                  {candidateReport.hackathons &&
-                    candidateReport.hackathons.length > 0 && (
-                      <div>
-                        <h6 className="text-sm font-medium text-gray-600 mb-2">
-                          Hackathons & Competitions
-                        </h6>
-                        <div className="space-y-1">
-                          {candidateReport.hackathons.map(
-                            (hackathon, index) => (
-                              <div
-                                key={index}
-                                className="flex items-start space-x-2"
-                              >
-                                <span className="text-orange-500 mt-1">•</span>
-                                <span className="text-gray-700 text-sm">
-                                  {hackathon}
-                                </span>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    )}
-                </div>
-              </div>
-            </div>
-
             {/* Recruiter Notes Section - Clean Design */}
             <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
               <div className="flex items-center justify-between mb-6">
@@ -3249,7 +3738,9 @@ const RecruiterDashboard = () => {
                 <button
                   onClick={() => {
                     setEditingNotes(selectedCandidate.id);
-                    setTempNotes(candidateReport.notes || "");
+                    setTempNotes(
+                      selectedCandidate.notes || candidateReport.notes || ""
+                    );
                   }}
                   className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all flex items-center space-x-2"
                 >
@@ -3290,7 +3781,8 @@ const RecruiterDashboard = () => {
               ) : (
                 <div className="bg-gray-50 rounded-xl p-6 min-h-[100px] flex items-center">
                   <p className="text-gray-700 leading-relaxed text-lg">
-                    {candidateReport.notes ||
+                    {selectedCandidate.notes ||
+                      candidateReport.notes ||
                       "No notes yet. Click 'Edit Notes' to add your thoughts about this candidate."}
                   </p>
                 </div>

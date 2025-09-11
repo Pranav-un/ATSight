@@ -18,6 +18,10 @@ import org.springframework.http.MediaType;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.FileSystemResource;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+
 import java.util.List;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -154,12 +158,29 @@ public class RecruiterController {
     }
 
     @PreAuthorize("hasRole('RECRUITER')")
-    @PatchMapping("/leaderboard/entry/{entryId}/notes")
-    public ResponseEntity<LeaderboardEntry> updateCandidateNotes(@PathVariable Long entryId,
+    @PatchMapping(value = "/leaderboard/entry/{entryId}/notes", consumes = {"text/plain", "application/json"})
+    public ResponseEntity<Map<String, Object>> updateCandidateNotes(@PathVariable Long entryId,
                                                                 @RequestBody String notes,
                                                                 @AuthenticationPrincipal User recruiter) {
+        System.out.println("=== UPDATE NOTES REQUEST ===");
+        System.out.println("Entry ID: " + entryId);
+        System.out.println("Notes received: '" + notes + "'");
+        System.out.println("Notes length: " + (notes != null ? notes.length() : "null"));
+        System.out.println("Recruiter: " + recruiter.getEmail());
+        
         LeaderboardEntry entry = recruiterService.updateCandidateNotes(entryId, notes, recruiter);
-        return ResponseEntity.ok(entry);
+        
+        System.out.println("Notes saved to entry: '" + entry.getNotes() + "'");
+        System.out.println("=== UPDATE NOTES RESPONSE ===");
+        
+        // Create a simple response to avoid lazy loading issues
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", entry.getId());
+        response.put("notes", entry.getNotes());
+        response.put("candidateName", entry.getCandidateName());
+        response.put("success", true);
+        
+        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('RECRUITER')")

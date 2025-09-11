@@ -431,10 +431,23 @@ public class RecruiterServiceImpl implements RecruiterService {
     }
 
     @Override
+    @Transactional
     public LeaderboardEntry updateCandidateNotes(Long entryId, String notes, User recruiter) {
+        System.out.println("=== SERVICE: UPDATE NOTES ===");
+        System.out.println("Entry ID: " + entryId);
+        System.out.println("Notes to save: '" + notes + "'");
+        
         LeaderboardEntry entry = getLeaderboardEntry(entryId, recruiter);
+        System.out.println("Found entry with current notes: '" + entry.getNotes() + "'");
+        
         entry.setNotes(notes);
-        return leaderboardEntryRepository.save(entry);
+        System.out.println("Set notes to: '" + entry.getNotes() + "'");
+        
+        LeaderboardEntry savedEntry = leaderboardEntryRepository.save(entry);
+        System.out.println("Saved entry with notes: '" + savedEntry.getNotes() + "'");
+        System.out.println("=== SERVICE: UPDATE NOTES COMPLETE ===");
+        
+        return savedEntry;
     }
 
     @Override
