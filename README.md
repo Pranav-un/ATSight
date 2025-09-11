@@ -1,4 +1,4 @@
-# 🎯 ATSight - AI-Powered Resume Analysis System
+# ATSight - AI-Powered Resume Analysis System
 
 > **Transform your hiring process with intelligent resume analysis and candidate matching**
 
