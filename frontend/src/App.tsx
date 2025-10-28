@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import NewLandingPage from "./pages/NewLandingPage";
 import LoginPage from "./pages/LoginPageNew";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import JobSeekerDashboard from "./pages/JobSeekerDashboardNew";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -13,6 +15,8 @@ function App() {
         <Route path="/" element={<NewLandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<JobSeekerDashboard />} />
         <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />

@@ -10,4 +10,6 @@ public interface UserService {
     AuthResponse authenticateUser(AuthRequest request);
     User loadUserByEmail(String email);
     Optional<User> findByEmail(String email);
+    void initiatePasswordReset(String email, String frontendUrl);
+    void resetPassword(String token, String newPassword);
 } 

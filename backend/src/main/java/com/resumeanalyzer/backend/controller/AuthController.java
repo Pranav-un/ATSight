@@ -1,7 +1,6 @@
 package com.resumeanalyzer.backend.controller;
 
-import com.resumeanalyzer.backend.dto.AuthRequest;
-import com.resumeanalyzer.backend.dto.AuthResponse;
+import com.resumeanalyzer.backend.dto.*;
 import com.resumeanalyzer.backend.entity.User;
 import com.resumeanalyzer.backend.service.UserService;
 import com.resumeanalyzer.backend.util.JwtUtil;
@@ -100,6 +99,45 @@ public class AuthController {
                     throw new RuntimeException("Test login failed: " + registerError.getMessage());
                 }
             }
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        try {
+            userService.initiatePasswordReset(request.getEmail(), "http://localhost:3000");
+            return ResponseEntity.ok(new ApiResponse("Password reset email sent successfully", true));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ApiResponse("If the email exists, a password reset link has been sent", true));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            userService.resetPassword(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok(new ApiResponse("Password reset successfully", true));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(e.getMessage(), false));
+        }
+    }
+
+    @PostMapping("/test-email")
+    public ResponseEntity<ApiResponse> testEmail() {
+        try {
+            System.out.println("=== EMAIL TEST STARTING ===");
+            System.out.println("Testing email to: pranav.24pmc141@mariancollege.org");
+            
+            // Direct test of email service
+            userService.initiatePasswordReset("pranav.24pmc141@mariancollege.org", "http://localhost:3000");
+            
+            System.out.println("=== EMAIL TEST COMPLETED SUCCESSFULLY ===");
+            return ResponseEntity.ok(new ApiResponse("Test email sent successfully", true));
+        } catch (Exception e) {
+            System.err.println("=== EMAIL TEST FAILED ===");
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(new ApiResponse("Email test failed: " + e.getMessage() + " | Cause: " + (e.getCause() != null ? e.getCause().getMessage() : "Unknown"), false));
         }
     }
 }
