@@ -2,7 +2,7 @@
 
 > **Transform your hiring process with intelligent resume analysis and candidate matching**
 
-ATSight is a comprehensive recruitment platform that leverages AI to analyze resumes, match candidates to job descriptions, and provide actionable insights for recruiters and job seekers.
+ATSight is a comprehensive recruitment platform that leverages AI to analyze resumes, match candidates to job descriptions, and provide actionable insights for recruiters and job seekers. Built with modern technologies including Spring Boot 3.5, React 19, and advanced AI integration capabilities.
 
 ---
 
@@ -25,7 +25,7 @@ ATSight is a comprehensive recruitment platform that leverages AI to analyze res
 ### 👥 **Multi-User Platform**
 
 - **Job Seekers**: Upload resumes, get AI feedback, track applications
-- **Recruiters**: Manage candidates, create leaderboards, interview insights
+- **Recruiters**: Upload Bulk Resumes, Manage candidates, create leaderboards, and Get Hiring Recommendations 
 - **Admins**: System monitoring and user management
 
 ---
@@ -62,9 +62,10 @@ _Personalized insights and career guidance_
 
 ### Prerequisites
 
-- **Java 21+**
-- **Node.js 18+**
+- **Java 21** (Required for Spring Boot 3.5)
+- **Node.js 18+** (Tested with React 19)
 - **MySQL 8.0+**
+- **Maven 3.6+** (or use included wrapper)
 
 ### 1. Clone & Setup
 
@@ -73,15 +74,27 @@ git clone https://github.com/Pranav-un/ATSight.git
 cd ATSight
 ```
 
-### 2. Backend Setup
+### 2. Database Setup
+
+```sql
+-- Create database
+CREATE DATABASE resume_analyzer;
+-- The application will auto-create tables on first run
+```
+
+### 3. Backend Setup
 
 ```bash
 cd backend
-# Set up environment variables (see below)
+
+# Windows (PowerShell)
+.\mvnw.cmd spring-boot:run
+
+# Linux/Mac
 ./mvnw spring-boot:run
 ```
 
-### 3. Frontend Setup
+### 4. Frontend Setup
 
 ```bash
 cd frontend
@@ -89,72 +102,169 @@ npm install
 npm run dev
 ```
 
-### 4. Access the Application
+### 5. Access the Application
 
-- **Frontend**: http://localhost:3001
+- **Frontend**: http://localhost:5173 (Vite dev server)
 - **Backend API**: http://localhost:8080
+- **API Documentation**: http://localhost:8080/api-docs (if enabled)
 
 ---
 
 ## ⚙️ Configuration
 
-Create `.env` file in the backend directory:
+Create a `.env` file in the **backend** directory with the following variables:
 
 ```env
-# Database
+# Database Configuration
 DB_URL=jdbc:mysql://localhost:3306/resume_analyzer
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
+DB_USERNAME=your_mysql_username
+DB_PASSWORD=your_mysql_password
 
 # Security
-JWT_SECRET=your_jwt_secret_key
+JWT_SECRET=your_super_secret_jwt_key_at_least_32_chars
 
 # AI Features (Optional)
-HUGGINGFACE_API_TOKEN=your_token
-GROQ_API_KEY=your_groq_key
+HUGGINGFACE_API_TOKEN=hf_your_hugging_face_token
+GROQ_API_KEY=gsk_your_groq_api_key
 AI_SUGGESTIONS_ENABLED=true
+LLM_ENABLED=true
+
+# Email Configuration (for notifications)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Optional: Ollama Local LLM
+OLLAMA_API_URL=http://localhost:11434/api/generate
 ```
+
+### Environment Variables Reference
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DB_URL` | MySQL database connection URL | ✅ |
+| `DB_USERNAME` | Database username | ✅ |
+| `DB_PASSWORD` | Database password | ✅ |
+| `JWT_SECRET` | Secret key for JWT token generation | ✅ |
+| `HUGGINGFACE_API_TOKEN` | For AI-powered resume analysis | ❌ |
+| `GROQ_API_KEY` | For LLM-based suggestions | ❌ |
+| `MAIL_*` | Email service configuration | ❌ |
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Component    | Technology                         |
-| ------------ | ---------------------------------- |
-| **Backend**  | Spring Boot 3.5, Java 21, MySQL    |
-| **Frontend** | React 18, TypeScript, Tailwind CSS |
-| **AI/ML**    | Hugging Face, Groq API             |
-| **Security** | JWT Authentication                 |
-| **Build**    | Maven, Vite                        |
+### Backend
+| Component | Technology | Version |
+|-----------|------------|---------|
+| **Framework** | Spring Boot | 3.5.3 |
+| **Language** | Java | 21 |
+| **Database** | MySQL | 8.0+ |
+| **ORM** | Spring Data JPA | - |
+| **Security** | Spring Security + JWT | - |
+| **File Processing** | Apache Tika | 2.9.0 |
+| **PDF Processing** | iText | 5.5.13 |
+| **Build Tool** | Maven | 3.6+ |
+
+### Frontend
+| Component | Technology | Version |
+|-----------|------------|---------|
+| **Framework** | React | 19.1.0 |
+| **Language** | TypeScript | 5.8.3 |
+| **Styling** | Tailwind CSS | 3.3.0 |
+| **Build Tool** | Vite | 7.0.0 |
+| **Charts** | Chart.js + Recharts | - |
+| **Icons** | React Icons | 5.5.0 |
+| **Animation** | Framer Motion | 12.19.2 |
+
+### AI & External Services
+- **Hugging Face** - NLP and resume analysis
+- **Groq API** - Fast LLM inference
+- **Ollama** - Local LLM support (optional)
 
 ---
 
 ## 📈 Key Capabilities
 
-- **Resume Analysis**: Extract skills, experience, education automatically
-- **Smart Matching**: AI-powered job-candidate compatibility scoring
-- **Interview Insights**: Generate personalized interview questions
-- **Performance Tracking**: Monitor recruitment metrics and success rates
-- **Secure Platform**: JWT-based authentication with role management
+### 🔍 **Resume Analysis**
+- Automatic text extraction from PDF and DOC files (Apache Tika)
+- AI-powered skills identification and categorization
+- Experience level assessment and career progression analysis
+- Education qualification parsing and validation
+
+### 🎯 **Smart Matching**
+- Job-candidate compatibility scoring with detailed breakdowns
+- Skills gap analysis and recommendations
+- Experience relevance matching
+- Cultural fit assessment
+
+### 💬 **AI-Powered Insights**
+- Personalized interview questions generation
+- Resume improvement suggestions
+- Career path recommendations
+- Industry-specific feedback
+
+### 📊 **Analytics & Reporting**
+- Real-time candidate leaderboards and rankings
+- Recruitment pipeline analytics and bottleneck identification
+- Performance metrics and success rate tracking
+- Detailed candidate assessment reports
+
+### 🔐 **Enterprise Security**
+- JWT-based stateless authentication
+- Role-based access control (Job Seeker, Recruiter, Admin)
+- Secure file upload and processing
+- Environment-based configuration management
 
 ---
 
-## 🔒 Security
+## 🔒 Security Features
 
-- Environment-based configuration
-- JWT token authentication
-- Secure file upload handling
-- CORS protection
-- Input validation and sanitization
+- **Authentication**: Stateless JWT token-based authentication
+- **Authorization**: Role-based access control with Spring Security
+- **Data Protection**: Input validation and sanitization using Spring Validation
+- **File Security**: Secure file upload handling with Apache Tika
+- **Configuration**: Environment-based secrets management
+- **Email Security**: Secure SMTP with TLS encryption
+- **CORS Protection**: Configurable cross-origin resource sharing
+- **SQL Injection Prevention**: JPA/Hibernate query protection
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+We welcome contributions! Please follow these steps:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Development Guidelines
+
+- Follow Java code conventions for backend
+- Use TypeScript and follow React best practices for frontend
+- Write tests for new features
+- Update documentation as needed
+- Ensure all tests pass before submitting PR
+
+### Project Structure
+
+```
+ATSight/
+├── backend/                 # Spring Boot application
+│   ├── src/main/java/      # Java source code
+│   ├── src/main/resources/ # Application properties and static resources
+│   └── src/test/           # Unit and integration tests
+├── frontend/               # React application
+│   ├── src/components/     # Reusable React components
+│   ├── src/pages/         # Page components
+│   ├── src/types/         # TypeScript type definitions
+│   └── src/utils/         # Utility functions
+└── README.md              # Project documentation
+```
 
 ---
 
@@ -164,9 +274,41 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📞 Support
+## � Troubleshooting
 
-For questions or support, please contact [your-email@domain.com](mailto:your-email@domain.com)
+### Common Issues
+
+**Backend won't start:**
+- Ensure Java 21 is installed and `JAVA_HOME` is set
+- Check MySQL is running and database exists
+- Verify `.env` file is properly configured
+
+**Frontend build fails:**
+- Ensure Node.js 18+ is installed
+- Delete `node_modules` and `package-lock.json`, then run `npm install`
+- Check for TypeScript errors in the console
+
+**Database connection issues:**
+- Verify MySQL is running on the correct port
+- Check database credentials in `.env` file
+- Ensure the database `resume_analyzer` exists
+
+**AI features not working:**
+- Verify API keys are correctly set in `.env`
+- Check internet connectivity for external AI services
+- Review application logs for API rate limit issues
+
+### Performance Tips
+
+- Use MySQL indices for better query performance
+- Configure JVM heap size for large file processing
+- Enable Redis caching for frequent database queries (future enhancement)
+
+## 📞 Support & Contact
+
+- **Issues**: [GitHub Issues](https://github.com/Pranav-un/ATSight/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Pranav-un/ATSight/discussions)
+- **Email**: For private matters only
 
 ---
 
