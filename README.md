@@ -232,24 +232,6 @@ OLLAMA_API_URL=http://localhost:11434/api/generate
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Development Guidelines
-
-- Follow Java code conventions for backend
-- Use TypeScript and follow React best practices for frontend
-- Write tests for new features
-- Update documentation as needed
-- Ensure all tests pass before submitting PR
-
 ### Project Structure
 
 ```
@@ -271,38 +253,6 @@ ATSight/
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## � Troubleshooting
-
-### Common Issues
-
-**Backend won't start:**
-- Ensure Java 21 is installed and `JAVA_HOME` is set
-- Check MySQL is running and database exists
-- Verify `.env` file is properly configured
-
-**Frontend build fails:**
-- Ensure Node.js 18+ is installed
-- Delete `node_modules` and `package-lock.json`, then run `npm install`
-- Check for TypeScript errors in the console
-
-**Database connection issues:**
-- Verify MySQL is running on the correct port
-- Check database credentials in `.env` file
-- Ensure the database `resume_analyzer` exists
-
-**AI features not working:**
-- Verify API keys are correctly set in `.env`
-- Check internet connectivity for external AI services
-- Review application logs for API rate limit issues
-
-### Performance Tips
-
-- Use MySQL indices for better query performance
-- Configure JVM heap size for large file processing
-- Enable Redis caching for frequent database queries (future enhancement)
 
 ## 📞 Support & Contact
 
