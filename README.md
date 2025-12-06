@@ -2,7 +2,7 @@
 
 > **Transform your hiring process with intelligent resume analysis and candidate matching**
 
-ATSight is a comprehensive recruitment platform that leverages AI to analyze resumes, match candidates to job descriptions, and provide actionable insights for recruiters and job seekers. Built with modern technologies including Spring Boot 3.5, React 19, and advanced AI integration capabilities.
+ATSight is a comprehensive web app that reads a person’s resume and uses AI to judge it. It tells how strong the resume is, highlights issues, and ranks multiple candidates automatically for recruiters, and provide actionable insights for recruiters and job seekers. Built with modern technologies including Spring Boot 3.5, React 19, and advanced AI integration capabilities.
 
 ---
 
