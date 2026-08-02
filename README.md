@@ -30,36 +30,6 @@ ATSight is a comprehensive web app that reads a person’s resume and uses AI to
 
 ---
 
-## 🖼️ Screenshots
-
-### 🏠 Landing Page
-
-_Experience the modern, intuitive interface_
-
-<!-- Add your landing page screenshot here -->
-
-<img width="1896" height="904" alt="Screenshot 2025-11-12 152553" src="https://github.com/user-attachments/assets/6a01287f-ec28-48fb-ab1d-caf2a830c85a" />
-
-
-### 👔 Recruiter Dashboard
-
-_Powerful tools for efficient candidate management_
-
-<!-- Add your recruiter dashboard screenshot here -->
-
-<img width="1894" height="905" alt="Screenshot 2025-11-12 152634" src="https://github.com/user-attachments/assets/37b5722b-32b3-4ea7-8caf-6d6c5e63a6bd" />
-
-
-### 💼 Job Seeker Dashboard
-
-_Personalized insights and career guidance_
-
-<!-- Add your job seeker dashboard screenshot here -->
-
-<img width="1897" height="910" alt="Screenshot 2025-11-12 152620" src="https://github.com/user-attachments/assets/bcda4755-02bf-4dd2-9b02-23b15ae0da27" />
-
-
----
 
 ## 🚀 Quick Start
 
